@@ -28,6 +28,12 @@ Este repositório existe apenas como **documentação e versionamento** do siste
 
 Ver [ARQUITETURA.md](./ARQUITETURA.md) para detalhes técnicos e [CHANGELOG.md](./CHANGELOG.md) para o histórico de versões.
 
+## Site institucional (projeto separado)
+
+Além do CRM, existe a **plataforma imobiliária pública** — o site de captação da marca Thiago Nunes
+Soluções Imobiliárias, construído no Lovable. Especificação, decisões de arquitetura e pontos de
+integração com este CRM estão em [SITE-INSTITUCIONAL.md](./SITE-INSTITUCIONAL.md).
+
 ## Próximos passos em aberto
 
 - Sincronizar fotos de imóveis e anexos de contrato para o R2 (hoje ficam fora do sync com o D1 por limite de 2MB/linha)
