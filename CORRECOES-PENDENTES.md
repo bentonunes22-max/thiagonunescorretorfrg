@@ -1,4 +1,9 @@
-# Correções prontas para aplicar — sem gastar créditos
+# Correções do WhatsApp — APLICADAS
+
+> **Situação atual:** estas duas correções já foram aplicadas no repositório do site
+> (https://github.com/bentonunes22-max/thiago-nunes-imoveis), no PR #1, e validadas com
+> `tsc`, `vite build` e teste das rotas no SSR. Este documento fica como registro técnico
+> do diagnóstico e da solução.
 
 Estas são as correções dos dois bugs de conversão apontados em
 [SITE-IMOBILIARIO.md](./SITE-IMOBILIARIO.md). O código completo está aqui, pronto para ser

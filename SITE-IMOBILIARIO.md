@@ -6,11 +6,19 @@ gestão; este site é a vitrine pública que alimenta o CRM com leads.
 
 | | |
 |---|---|
-| **Projeto Lovable** | `Prime Imóveis Online` — `5c6f97e6-bcf9-4a14-8c84-d894a3ee36cc` |
-| **Editor** | https://lovable.dev/projects/5c6f97e6-bcf9-4a14-8c84-d894a3ee36cc |
-| **Preview** | https://id-preview--5c6f97e6-bcf9-4a14-8c84-d894a3ee36cc.lovable.app |
+| **Repositório (fonte da verdade)** | https://github.com/bentonunes22-max/thiago-nunes-imoveis |
+| **Projeto Lovable (origem)** | `Prime Imóveis Online` — `5c6f97e6-bcf9-4a14-8c84-d894a3ee36cc` |
+| **Editor Lovable** | https://lovable.dev/projects/5c6f97e6-bcf9-4a14-8c84-d894a3ee36cc |
 | **Publicado** | ❌ ainda não — falta publicar e apontar o domínio |
 | **Stack** | TanStack Start (SSR) + React + TypeScript + Tailwind + shadcn/ui |
+
+> **O código agora vive no GitHub.** O site foi criado no Lovable, mas o código-fonte foi
+> espelhado para o repositório acima, onde a evolução acontece por git — **sem consumir créditos
+> do Lovable**. O projeto no Lovable permanece como origem histórica e pode ser usado para
+> conferência visual, mas não é mais a fonte da verdade.
+>
+> O espelho foi validado: `npx tsc --noEmit` e `npx vite build` passam sem erros, as 15 rotas
+> respondem 200 no servidor SSR e a rota inexistente responde 404.
 
 > O nome interno do projeto no Lovable ("Prime Imóveis Online") foi gerado automaticamente e
 > **não aparece em lugar nenhum do site**. A marca exibida vem toda de `src/config/site.ts`.
@@ -113,7 +121,7 @@ permitir essa troca. Requer CORS liberado no Worker para o domínio do site.
 
 Auditoria feita sobre o código-fonte do projeto. Os itens 1 e 2 são bugs reais confirmados.
 
-### 🔴 1. Botão flutuante cobre o CTA da página de imóvel no celular
+### ✅ 1. Botão flutuante cobria o CTA da página de imóvel no celular — CORRIGIDO (PR #1)
 
 `src/components/layout/WhatsAppFloatingButton.tsx` recebe uma prop `offsetBottom` criada
 exatamente para subir o botão quando a página tem barra fixa inferior. Mas em
@@ -123,10 +131,11 @@ ou seja, o recurso existe e nunca é acionado.
 Efeito: na página de detalhe do imóvel, no celular, o botão flutuante fica por cima do botão
 "Falar no WhatsApp" da barra fixa — justamente o CTA mais importante do site.
 
-*Correção:* o botão precisa saber se a rota atual tem barra fixa (ou a página de imóvel precisa
-renderizar sua própria versão do botão com `offsetBottom`).
+*Corrigido:* um wrapper lê a rota atual via `useRouterState` e ativa `offsetBottom` apenas em
+`/imoveis/<slug>`. Verificado no SSR renderizado: a home traz `bottom-5` e a página de imóvel
+traz `bottom-24`.
 
-### 🔴 2. WhatsApp pode não abrir no iPhone após enviar formulário
+### ✅ 2. WhatsApp podia não abrir no iPhone após enviar formulário — CORRIGIDO (PR #1)
 
 `src/components/forms/LeadForm.tsx` chama `window.open(whatsappUrl, "_blank")` **depois** de um
 `await leadRepository.createLead(...)`. Como a chamada sai do contexto do clique do usuário, o
@@ -135,8 +144,10 @@ Safari no iOS costuma bloquear a abertura como pop-up.
 Efeito: a pessoa preenche o formulário inteiro, vê a mensagem de sucesso e o WhatsApp não abre.
 Lead perdido.
 
-*Correção:* montar a URL e disparar a navegação de forma síncrona no submit, ou mostrar um link
-visível "Abrir WhatsApp" como plano B caso a janela seja bloqueada.
+*Corrigido:* a montagem da URL (pura) foi separada da gravação do lead (assíncrona).
+`buildLeadWhatsAppUrl` monta a URL de forma síncrona, a navegação sai ainda dentro do clique e o
+registro do lead corre em paralelo. Se algum navegador ainda bloquear, aparece um link de reserva
+visível.
 
 ### 🟡 3. Painel administrativo não foi implementado
 
@@ -187,7 +198,8 @@ Em `src/components/seo/seo.ts`, o campo `slogan` do JSON-LD recebe a localizaç�
 ## 5. Checklist para colocar no ar
 
 - [ ] Remover ou substituir os 12 imóveis de demonstração
-- [ ] Corrigir os bugs 🔴 1 e 2
+- [x] Corrigir os dois bugs de conversão do WhatsApp — PR #1
+- [ ] Revisar e mesclar o PR #1
 - [x] Confirmar o Instagram — `@thiagonunes_corretor`
 - [ ] Confirmar o endereço (exibir ou não) e o formato do CRECI
 - [ ] Definir o domínio e atualizar `src/config/site.ts` + `public/robots.txt`
@@ -201,14 +213,41 @@ Em `src/components/seo/seo.ts`, o campo `slogan` do JSON-LD recebe a localizaç�
 
 ---
 
-> As correções dos itens 🔴 1 e 2 já estão escritas e prontas para aplicar em
-> [CORRECOES-PENDENTES.md](./CORRECOES-PENDENTES.md) — sem gastar créditos.
+## 6. Créditos do Lovable — problema resolvido
 
-## 6. Estado dos créditos do Lovable
+O workspace (`thiago's Lovable`, plano **free**) ficou **sem créditos**, o que impedia o agente do
+Lovable de aplicar qualquer alteração.
 
-O workspace (`thiago's Lovable`, plano **free**) está **sem créditos**. As correções dos itens
-acima precisam ser feitas pelo agente do Lovable, o que exige créditos ou upgrade de plano:
-https://lovable.dev/settings/billing
+Isso deixou de ser um bloqueio: o código foi espelhado para o GitHub e a evolução acontece por
+git. **Editar arquivo não consome crédito** — crédito é consumido apenas quando o agente de IA do
+Lovable escreve código. Daqui em diante, correções, novas páginas, o painel administrativo e a
+integração com o CRM podem ser feitos sem custo de créditos.
 
-Enquanto isso, o código pode ser lido e revisado normalmente — só não pode ser alterado pelo
-agente.
+## 7. Como trabalhar no site a partir de agora
+
+```bash
+git clone https://github.com/bentonunes22-max/thiago-nunes-imoveis
+cd thiago-nunes-imoveis
+npm install
+npm run dev      # servidor local em http://localhost:5173
+npm run build    # build de produção (alvo Cloudflare, gera .output/)
+npx tsc --noEmit # checagem de tipos
+```
+
+> **Componentes shadcn/ui:** o Lovable inclui 45 componentes por padrão, mas o site importa
+> apenas 8 (`button`, `checkbox`, `input`, `label`, `select`, `sheet`, `sonner`, `textarea`).
+> Só esses foram espelhados. Se algum outro for necessário no futuro, basta adicioná-lo com o
+> CLI do shadcn — a configuração em `components.json` já está pronta.
+
+> **`src/routeTree.gen.ts`** é gerado automaticamente pelo plugin do TanStack Router durante o
+> build. Não precisa ser editado à mão.
+
+## 8. Hospedagem: Cloudflare Pages/Workers
+
+O build já sai com **alvo Cloudflare** por padrão — o nitro gera `wrangler.json` e
+`.wrangler/deploy/config.json` sozinho, sem nenhuma configuração adicional. Isso confirma que o
+site pode ser publicado na mesma conta Cloudflare que já hospeda o CRM (Worker + D1 + R2), que
+você já paga.
+
+Vantagens de concentrar tudo lá: uma infraestrutura só, CORS trivial entre site e CRM, domínio
+gerenciado no mesmo lugar e independência total do Lovable.
