@@ -201,6 +201,9 @@ Em `src/components/seo/seo.ts`, o campo `slogan` do JSON-LD recebe a localizaç�
 
 ---
 
+> As correções dos itens 🔴 1 e 2 já estão escritas e prontas para aplicar em
+> [CORRECOES-PENDENTES.md](./CORRECOES-PENDENTES.md) — sem gastar créditos.
+
 ## 6. Estado dos créditos do Lovable
 
 O workspace (`thiago's Lovable`, plano **free**) está **sem créditos**. As correções dos itens
