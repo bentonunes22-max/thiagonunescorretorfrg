@@ -174,8 +174,9 @@ Em `src/components/seo/seo.ts`, o campo `slogan` do JSON-LD recebe a localizaç�
 
 ### ⚪ 8. Dados a confirmar antes de publicar
 
-- **Instagram** — circulam duas grafias: `@thiagonunes_corretor` (usada no site) e
-  `@thiago_nunes_corretor` (no README do CRM). Confirmar qual é a correta.
+- ~~**Instagram**~~ — ✅ confirmado: `@thiagonunes_corretor`, que é justamente a grafia já usada
+  no site. Nada a alterar no Lovable. O README do CRM, que trazia `@thiago_nunes_corretor`, foi
+  corrigido.
 - **Endereço** — `Rua Vitória, 706` está no config, mas com `exibirEnderecoCompleto: false`,
   então o site mostra apenas "Fazenda Rio Grande – PR". Se for endereço de atendimento ao
   público, vale ativar (ajuda no SEO local). Se for residencial, manter desligado.
@@ -187,7 +188,8 @@ Em `src/components/seo/seo.ts`, o campo `slogan` do JSON-LD recebe a localizaç�
 
 - [ ] Remover ou substituir os 12 imóveis de demonstração
 - [ ] Corrigir os bugs 🔴 1 e 2
-- [ ] Confirmar Instagram, endereço e formato do CRECI
+- [x] Confirmar o Instagram — `@thiagonunes_corretor`
+- [ ] Confirmar o endereço (exibir ou não) e o formato do CRECI
 - [ ] Definir o domínio e atualizar `src/config/site.ts` + `public/robots.txt`
 - [ ] Definir imagem padrão de compartilhamento
 - [ ] Publicar pelo Lovable e apontar o domínio
