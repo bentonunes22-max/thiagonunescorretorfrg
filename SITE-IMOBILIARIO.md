@@ -149,21 +149,25 @@ Lead perdido.
 registro do lead corre em paralelo. Se algum navegador ainda bloquear, aparece um link de reserva
 visível.
 
-### 🟡 3. Painel administrativo não foi implementado
+### ✅ 3. Painel administrativo — IMPLEMENTADO (PR #3)
 
-Não existe rota `/admin`. A arquitetura está preparada (repository pattern isola a fonte de
-dados), mas a tela em si não foi criada.
+Rotas `/admin`, `/admin/imoveis` e `/admin/leads`, consumindo a API do Worker do CRM — sem criar
+banco próprio. Permite alterar **preço**, **status** e **destaque**, e ver/exportar os leads.
 
-Para funcionar de verdade — cadastrar imóvel, alterar preço, subir foto, marcar destaque, ver
-leads — o painel depende de **autenticação e backend**. O CRM já tem os dois (JWT + D1 + R2), então
-o caminho mais barato é o painel do site consumir a API autenticada do Worker em vez de criar
-login e banco novos.
+Cadastro de imóvel do zero e upload de fotos continuam no CRM, que já tem a rota do R2 pronta.
+Enquanto `VITE_CRM_API_URL` não estiver configurada, o painel abre em modo explicativo — não
+existe tela de edição que não salva.
 
-### 🟡 4. Depoimentos aprovados ainda não estão no site
+**Ponto de segurança levantado:** a API do CRM aceita o token por query string (`?token=`). O site
+usa sempre o header `Authorization`, porque token em query string vaza em log de servidor,
+histórico do navegador e cabeçalho `Referer`. Vale desativar essa variante no Worker quando ela
+não for mais necessária para testes.
 
-Você autorizou reaproveitar os depoimentos da Roseli e do Valdeci (do projeto anterior). Eles
-ainda não foram incluídos. Devem entrar num arquivo de configuração editável, não escritos
-dentro de um componente.
+### ✅ 4. Depoimentos aprovados — INCLUÍDOS (PR #2)
+
+Depoimentos da Roseli e do Valdeci na home, em `src/config/depoimentos.ts` — editável num arquivo
+só, com aviso explícito de que apenas depoimentos reais e autorizados podem entrar. Nada de notas,
+estrelas ou contagem de avaliações.
 
 ### 🟡 5. `robots.txt` aponta para um domínio que ainda não existe
 
@@ -172,16 +176,15 @@ dentro de um componente.
 atualizadas juntas na hora de publicar — é o único lugar do projeto onde uma URL aparece fora
 do arquivo de configuração, porque `robots.txt` é um arquivo estático.
 
-### 🟡 6. Sem imagem padrão de compartilhamento
+### ✅ 6. Imagem padrão de compartilhamento — CORRIGIDO (PR #2)
 
-Só as páginas de imóvel e do blog têm `og:image`. Home, `/vender`, `/investidores` e as demais
-compartilham no WhatsApp e no Instagram sem imagem. Falta definir uma imagem padrão no
-`src/config/site.ts` e usá-la como fallback.
+Há fallback configurável em `siteConfig.site.imagemCompartilhamento`. Ainda usa uma foto genérica:
+**vale trocar por arte própria da marca (1200×630)**, já que é essa a imagem que aparece quando o
+site é compartilhado no WhatsApp e no Instagram.
 
-### 🟡 7. Detalhe no Schema.org
+### ✅ 7. Detalhe no Schema.org — CORRIGIDO (PR #2)
 
-Em `src/components/seo/seo.ts`, o campo `slogan` do JSON-LD recebe a localização
-(`"Fazenda Rio Grande – PR"`) em vez do slogan da marca.
+O `slogan` passou a receber o slogan da marca; a localização já estava em `address` e `areaServed`.
 
 ### ⚪ 8. Dados a confirmar antes de publicar
 
@@ -197,9 +200,11 @@ Em `src/components/seo/seo.ts`, o campo `slogan` do JSON-LD recebe a localizaç�
 
 ## 5. Checklist para colocar no ar
 
+- [ ] Revisar e mesclar os PRs abertos: **#1** (bugs do WhatsApp), **#2** (depoimentos e SEO),
+      **#3** (painel administrativo)
 - [ ] Remover ou substituir os 12 imóveis de demonstração
-- [x] Corrigir os dois bugs de conversão do WhatsApp — PR #1
-- [ ] Revisar e mesclar o PR #1
+- [ ] Configurar `VITE_CRM_API_URL` e conferir o JSON de `GET /api/imoveis` contra o adapter
+- [ ] Criar arte própria de compartilhamento (1200×630)
 - [x] Confirmar o Instagram — `@thiagonunes_corretor`
 - [ ] Confirmar o endereço (exibir ou não) e o formato do CRECI
 - [ ] Definir o domínio e atualizar `src/config/site.ts` + `public/robots.txt`
