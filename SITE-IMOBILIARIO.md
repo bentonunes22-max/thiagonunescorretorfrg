@@ -73,14 +73,18 @@ contato: {
 }
 ```
 
-### Cadastrar, editar ou remover imóveis (hoje)
+### Cadastrar, editar ou remover imóveis — ATUALIZADO (PR #4)
 
-`src/data/properties.seed.ts` — array de imóveis em TypeScript. Os 12 imóveis atuais são de
-**demonstração**, marcados com `isDemo: true`, e o site mostra o selo "Imóvel de demonstração"
-nos cards e na página de detalhe.
+Os 12 imóveis de demonstração saíram. `src/data/properties.seed.ts` está vazio de propósito, e o
+catálogo público passa a ler do CRM automaticamente quando `VITE_CRM_API_URL` está configurada —
+o `PropertyRepository` escolhe a fonte sozinho, sem precisar mexer em nenhuma página.
 
-> ⚠️ **Antes de divulgar o site, os imóveis de demonstração precisam sair.** Ou apague o arquivo
-> e substitua pelos reais, ou zere o array.
+Duas formas de cadastrar:
+
+1. **Pelo painel** (`/admin/imoveis/novo`) — recomendado. Formulário completo: identificação,
+   valores, localização, medidas, **fotos** (upload direto para o R2 do CRM ou colar uma URL) e
+   características. Grava no CRM, e o site puxa de lá.
+2. **Direto no arquivo** — para publicar sem depender do CRM. Não fica sincronizado com ele.
 
 ### Ligar os leads a um CRM / n8n / webhook
 
@@ -149,14 +153,14 @@ Lead perdido.
 registro do lead corre em paralelo. Se algum navegador ainda bloquear, aparece um link de reserva
 visível.
 
-### ✅ 3. Painel administrativo — IMPLEMENTADO (PR #3)
+### ✅ 3. Painel administrativo — IMPLEMENTADO (PR #3 + #4)
 
-Rotas `/admin`, `/admin/imoveis` e `/admin/leads`, consumindo a API do Worker do CRM — sem criar
-banco próprio. Permite alterar **preço**, **status** e **destaque**, e ver/exportar os leads.
+Rotas `/admin`, `/admin/imoveis`, `/admin/imoveis/novo`, `/admin/imoveis/$id` e `/admin/leads`,
+consumindo a API do Worker do CRM — sem criar banco próprio.
 
-Cadastro de imóvel do zero e upload de fotos continuam no CRM, que já tem a rota do R2 pronta.
-Enquanto `VITE_CRM_API_URL` não estiver configurada, o painel abre em modo explicativo — não
-existe tela de edição que não salva.
+O painel agora cadastra imóvel do zero, com **upload de fotos** para o R2 do CRM (ou URL colada),
+além de editar preço, status e destaque, e ver/exportar os leads. Enquanto `VITE_CRM_API_URL` não
+estiver configurada, o painel abre em modo explicativo — não existe tela de edição que não salva.
 
 **Ponto de segurança levantado:** a API do CRM aceita o token por query string (`?token=`). O site
 usa sempre o header `Authorization`, porque token em query string vaza em log de servidor,
@@ -200,10 +204,15 @@ O `slogan` passou a receber o slogan da marca; a localização já estava em `ad
 
 ## 5. Checklist para colocar no ar
 
-- [ ] Revisar e mesclar os PRs abertos: **#1** (bugs do WhatsApp), **#2** (depoimentos e SEO),
-      **#3** (painel administrativo)
-- [ ] Remover ou substituir os 12 imóveis de demonstração
-- [ ] Configurar `VITE_CRM_API_URL` e conferir o JSON de `GET /api/imoveis` contra o adapter
+- [ ] Revisar e mesclar os PRs abertos, nesta ordem (o #4 depende do #3):
+      **#1** (bugs do WhatsApp) → **#2** (depoimentos e SEO) → **#3** (painel administrativo) →
+      **#4** (remoção dos imóveis de demo + cadastro completo)
+- [x] Remover os 12 imóveis de demonstração — PR #4
+- [ ] Configurar `VITE_CRM_API_URL` e conferir o JSON de `GET /api/imoveis` e o de
+      `POST/PUT /api/imoveis` contra o adapter (`crm-property.adapter.ts`)
+- [ ] Testar o upload de foto uma vez e conferir o formato real de resposta do Worker
+      (`src/lib/crm-fotos.ts` documenta a suposição feita)
+- [ ] Cadastrar os imóveis reais pelo painel (`/admin/imoveis/novo`)
 - [ ] Criar arte própria de compartilhamento (1200×630)
 - [x] Confirmar o Instagram — `@thiagonunes_corretor`
 - [ ] Confirmar o endereço (exibir ou não) e o formato do CRECI
