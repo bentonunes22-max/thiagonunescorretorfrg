@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "scrapegraph-mcp": {
+      "command": "npx",
+      "args": [
+        "mcp-remote@latest",
+        "https://mcp.scrapegraphai.com/mcp",
+        "--header",
+        "X-API-Key:${SCRAPEGRAPH_API_KEY}"
+      ]
+    }
+  }
+}
