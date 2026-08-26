@@ -38,6 +38,20 @@ O arquivo [CLAUDE.md](./CLAUDE.md) na raiz reúne as instruções permanentes de
 
 Também está incluída em `.claude/skills/humanizer/` a skill **humanizer** ([blader/humanizer](https://github.com/blader/humanizer), MIT), que reescreve texto com "cara de IA" para soar como escrito por uma pessoa, sem mudar o conteúdo. É útil para revisar mensagens geradas por IA antes de enviar a um lead ou cliente — por exemplo, respostas da recepcionista automatizada "Fernanda" no WhatsApp, textos de proposta ou de follow-up — removendo clichês, linguagem de vendas genérica e outros padrões típicos de texto gerado por IA.
 
+O `.mcp.json` também declara o servidor MCP **superpowers**, vendorizado em
+`.claude/skills/superpowers-mcp/vendor/` a partir de
+[erophames/superpowers-mcp](https://github.com/erophames/superpowers-mcp)
+(servidor) e [obra/superpowers](https://github.com/obra/superpowers)
+(conteúdo das skills), ambos MIT — ver
+[`.claude/skills/superpowers-mcp/SKILL.md`](./.claude/skills/superpowers-mcp/SKILL.md)
+para detalhes de licença e origem. Ele expõe skills de processo de
+desenvolvimento de software (planejamento, TDD, debugging sistemático,
+revisão de código, git worktrees) como ferramentas MCP — úteis ao evoluir
+este repositório ou o `worker.js` de produção, sem relação com o domínio
+do CRM em si. Antes de usar, é preciso buildar uma vez por máquina: `cd
+.claude/skills/superpowers-mcp/vendor/server && npm install && npm run
+build` (instruções completas na `SKILL.md`).
+
 ## Próximos passos em aberto
 
 - Sincronizar fotos de imóveis e anexos de contrato para o R2 (hoje ficam fora do sync com o D1 por limite de 2MB/linha)

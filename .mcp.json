@@ -8,6 +8,15 @@
         "--header",
         "X-API-Key:${SCRAPEGRAPH_API_KEY}"
       ]
+    },
+    "superpowers": {
+      "command": "node",
+      "args": [
+        "${CLAUDE_PROJECT_DIR}/.claude/skills/superpowers-mcp/vendor/server/build/index.js"
+      ],
+      "env": {
+        "SUPERPOWERS_SKILLS_DIR": "${CLAUDE_PROJECT_DIR}/.claude/skills/superpowers-mcp/vendor/skills"
+      }
     }
   }
 }
