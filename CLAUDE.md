@@ -55,6 +55,10 @@ chave ou string longa de aparência aleatória, pare e pergunte.
   natural. Use antes de enviar qualquer texto gerado por IA a um lead ou
   cliente: respostas da recepcionista "Fernanda" no WhatsApp, textos de
   proposta, mensagens de follow-up e disparo em massa.
+- `.claude/skills/humanizer-ptbr/` — complemento em português da skill acima.
+  A original é escrita em inglês e a lista de palavras dela não pega os vícios
+  do português. Quando o texto a reescrever estiver em português, leia as duas:
+  primeiro `humanizer`, depois `humanizer-ptbr` por cima.
 
 ## Convenções de trabalho
 
