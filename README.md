@@ -38,6 +38,8 @@ O arquivo [CLAUDE.md](./CLAUDE.md) na raiz reúne as instruções permanentes de
 
 Também está incluída em `.claude/skills/humanizer/` a skill **humanizer** ([blader/humanizer](https://github.com/blader/humanizer), MIT), que reescreve texto com "cara de IA" para soar como escrito por uma pessoa, sem mudar o conteúdo. É útil para revisar mensagens geradas por IA antes de enviar a um lead ou cliente — por exemplo, respostas da recepcionista automatizada "Fernanda" no WhatsApp, textos de proposta ou de follow-up — removendo clichês, linguagem de vendas genérica e outros padrões típicos de texto gerado por IA.
 
+Como a skill original é escrita em inglês e a lista de palavras dela não cobre os vícios do português, `.claude/skills/humanizer-ptbr/` acrescenta uma camada em português brasileiro: palavras que a IA usa demais em português, vocabulário de anúncio imobiliário, gerúndio de call center ("vou estar verificando"), "o mesmo" como pronome, e conversão do Markdown para o formato que o WhatsApp realmente renderiza. É um arquivo separado justamente para não alterar o `SKILL.md` original e não conflitar com atualizações futuras do upstream.
+
 ## Próximos passos em aberto
 
 - Sincronizar fotos de imóveis e anexos de contrato para o R2 (hoje ficam fora do sync com o D1 por limite de 2MB/linha)
