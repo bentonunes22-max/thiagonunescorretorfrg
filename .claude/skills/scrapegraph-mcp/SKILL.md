@@ -1,6 +1,6 @@
 ---
 name: scrapegraph-mcp
-description: Configuração e uso do servidor MCP scrapegraph-mcp (ScrapeGraphAI) neste projeto (CRMTHIAGO), que dá a Claude acesso a scraping estruturado de páginas web via IA. Use esta skill sempre que o usuário pedir para raspar/extrair dados de imóveis ou anúncios de concorrentes em portais imobiliários, monitorar preços/anúncios de concorrentes, coletar dados estruturados de uma URL ou site, ou mencionar "scraping", "raspagem de dados", "scrapegraph", ou o robô/tabelas apify_leads e apify_sync_log citados em ARQUITETURA.md — mesmo que o usuário não peça explicitamente por "MCP" ou pelo nome do servidor. Também use quando o usuário pedir para configurar, revisar ou depurar a integração MCP deste repositório.
+description: Configuração e uso do servidor MCP scrapegraph-mcp (ScrapeGraphAI) neste projeto (CRMTHIAGO), que dá a Claude acesso a scraping estruturado de páginas web via IA. Use esta skill sempre que o usuário pedir para raspar, coletar ou extrair dados de imóveis ou anúncios de concorrentes em portais imobiliários, monitorar preços/anúncios da concorrência, puxar dados estruturados de uma URL ou site, ou mencionar "scraping", "raspagem de dados", "scrapegraph", ou o robô/tabelas apify_leads e apify_sync_log citados em ARQUITETURA.md — mesmo que o usuário não peça explicitamente por "MCP" ou pelo nome do servidor. Use também quando o usuário pedir para configurar, revisar ou depurar a integração MCP deste repositório.
 ---
 
 # scrapegraph-mcp — scraping estruturado via MCP
@@ -9,9 +9,9 @@ description: Configuração e uso do servidor MCP scrapegraph-mcp (ScrapeGraphAI
 
 Este repositório declara em `.mcp.json` (raiz do projeto) o servidor MCP
 **scrapegraph-mcp**, da ScrapeGraphAI. Ele expõe ferramentas de scraping
-com IA que recebem uma URL (ou HTML) e um objetivo em linguagem natural e
-devolvem dados já estruturados (JSON), sem precisar escrever parser/regex
-específico para cada site.
+com IA: você passa uma URL (ou HTML) e um objetivo em linguagem natural, e
+recebe de volta dados já estruturados em JSON — sem precisar escrever um
+parser ou regex específico para cada site.
 
 Config atual (`.mcp.json`):
 
@@ -40,8 +40,8 @@ que o servidor MCP é iniciado.
 Este CRM (ver [README.md](../../../README.md) e
 [ARQUITETURA.md](../../../ARQUITETURA.md)) já tem um robô de scraping de
 concorrentes em portais imobiliários, com dados armazenados em
-`apify_leads`/`apify_sync_log` no D1. O `scrapegraph-mcp` é a ferramenta a
-usar sempre que a tarefa envolver:
+`apify_leads`/`apify_sync_log` no D1. Use o `scrapegraph-mcp` sempre que a
+tarefa envolver:
 
 - Extrair dados de um anúncio/imóvel de um portal (preço, endereço, m²,
   fotos, descrição) a partir de uma URL.
@@ -77,14 +77,14 @@ seria necessário um servidor MCP diferente (ex.: automação de navegador).
 
 - Descreva o objetivo da extração em linguagem natural e clara (ex.: "do
   anúncio nesta URL, extraia preço, endereço, área em m² e número de
-  fotos") — o scrapegraph-mcp interpreta o pedido, não precisa de
+  fotos") — o scrapegraph-mcp interpreta o pedido; não é preciso indicar
   seletor CSS/XPath.
-- Sempre confira o JSON retornado antes de gravar no CRM (D1) ou em
+- Confira sempre o JSON retornado antes de gravar no CRM (D1) ou em
   qualquer planilha/relatório: campos ausentes ou nulos costumam indicar
   que a página mudou de estrutura ou bloqueou o acesso.
-- Para várias URLs (ex.: uma lista de concorrentes), prefira rodar uma
-  extração por vez e registrar/agregar os resultados, em vez de tentar
-  processar um lote inteiro em uma única chamada.
-- Respeite os termos de uso dos portais e o volume de requisições — este
-  MCP é para extração pontual/monitoramento, não para scraping em massa
-  sem controle de taxa.
+- Para várias URLs (ex.: uma lista de concorrentes), rode uma extração
+  por vez e agregue os resultados — não tente processar o lote inteiro
+  numa única chamada.
+- Respeite os termos de uso dos portais e o volume de requisições: este
+  MCP serve para extração pontual e monitoramento, não para scraping em
+  massa sem controle de taxa.
