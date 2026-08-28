@@ -38,6 +38,8 @@ O arquivo [CLAUDE.md](./CLAUDE.md) na raiz reúne as instruções permanentes de
 
 Também está incluída em `.claude/skills/humanizer/` a skill **humanizer** ([blader/humanizer](https://github.com/blader/humanizer), MIT), que reescreve texto com "cara de IA" para soar como escrito por uma pessoa, sem mudar o conteúdo. É útil para revisar mensagens geradas por IA antes de enviar a um lead ou cliente — por exemplo, respostas da recepcionista automatizada "Fernanda" no WhatsApp, textos de proposta ou de follow-up — removendo clichês, linguagem de vendas genérica e outros padrões típicos de texto gerado por IA.
 
+Em `.claude/skills/economia-tokens/` há também a skill **economia-tokens** (conteúdo original deste repositório), com boas práticas para reduzir o gasto de tokens do Claude Code entre projetos (cache de prompt, skills enxutas, gestão de contexto) e um alerta sobre por que evitar gateways/proxies de terceiros que prometem "tokens grátis" — esse tipo de ferramenta expõe credenciais da conta e dados de clientes a serviços fora da Anthropic.
+
 ## Próximos passos em aberto
 
 - Sincronizar fotos de imóveis e anexos de contrato para o R2 (hoje ficam fora do sync com o D1 por limite de 2MB/linha)
