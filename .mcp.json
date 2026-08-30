@@ -8,6 +8,13 @@
         "--header",
         "X-API-Key:${SCRAPEGRAPH_API_KEY}"
       ]
+    },
+    "open-wa": {
+      "type": "http",
+      "url": "http://localhost:8080/mcp",
+      "headers": {
+        "X-API-Key": "${WA_API_KEY}"
+      }
     }
   }
 }
