@@ -34,6 +34,15 @@ Este repositório declara em `.mcp.json` o servidor MCP **scrapegraph-mcp** (Scr
 
 Para usar, defina a variável de ambiente `SCRAPEGRAPH_API_KEY` com sua chave da [ScrapeGraphAI](https://scrapegraphai.com/) antes de abrir o Claude Code neste repositório — a chave não fica hardcoded no `.mcp.json`.
 
+Também está declarado o servidor MCP **open-wa**, do projeto [open-wa/wa-automate-nodejs](https://github.com/open-wa/wa-automate-nodejs) (licença [Hippocratic + Do Not Harm v1.1](https://github.com/open-wa/wa-automate-nodejs/blob/master/LICENSE.md) — uma licença de "ethical source" com cláusulas de uso responsável, não uma licença open source tradicional). Ele expõe via MCP as ações do WhatsApp Web automatizado pelo open-wa (ler/enviar mensagens, etc.), dando a assistentes de IA acesso direto ao WhatsApp.
+
+**Atenção**: esse MCP roda sobre uma sessão real do WhatsApp Web logada por QR code — no caso deste projeto, o número de produção do Thiago com conversas reais de leads e clientes. Antes de usar:
+
+- Rode o servidor localmente (`npx @open-wa/wa-automate@alpha --config ./wa.config.mjs`, com `mcp.enabled: true` no `wa.config.mjs`) e escaneie o QR code na sua própria sessão — isso não é feito a partir deste repositório nem do Claude Code.
+- Defina a variável de ambiente `WA_API_KEY` com a mesma chave usada pelo servidor open-wa; ela não fica hardcoded no `.mcp.json`.
+- É v5 ainda em alpha do open-wa — trate como instável.
+- Dados de conversa que passarem por esse MCP são dados pessoais de leads/clientes sob LGPD (ver [CLAUDE.md](./CLAUDE.md)): não use para enviar mensagens em massa nem repasse esse conteúdo a serviços externos sem pedido explícito do Thiago.
+
 O arquivo [CLAUDE.md](./CLAUDE.md) na raiz reúne as instruções permanentes de trabalho para o Claude Code neste repositório: idioma, cuidados com dados de leads e chaves de API, e as convenções de commit e PR.
 
 Também está incluída em `.claude/skills/humanizer/` a skill **humanizer** ([blader/humanizer](https://github.com/blader/humanizer), MIT), que reescreve texto com "cara de IA" para soar como escrito por uma pessoa, sem mudar o conteúdo. É útil para revisar mensagens geradas por IA antes de enviar a um lead ou cliente — por exemplo, respostas da recepcionista automatizada "Fernanda" no WhatsApp, textos de proposta ou de follow-up — removendo clichês, linguagem de vendas genérica e outros padrões típicos de texto gerado por IA.
