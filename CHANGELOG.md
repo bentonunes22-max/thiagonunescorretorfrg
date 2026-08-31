@@ -16,6 +16,7 @@
 - Follow-up: textarea de mensagem, campo de próximo follow-up, histórico cronológico por lead
 
 ## Marcos de infraestrutura (paralelos às versões de interface)
+- Automação de post no Google Meu Negócio a cada imóvel novo cadastrado (via Zapier, rotina agendada do Claude Code) + coluna `imoveis.gmb_postado_em` no D1 para controle de duplicidade
 - Deploy do Cloudflare Worker `crm-thiago-leads-worker` + D1 `crm-thiago-leads`
 - Integração WhatsApp/Meta Ads via webhook
 - Recepcionista automatizada "Fernanda" (Evolution API + n8n + API Claude)
