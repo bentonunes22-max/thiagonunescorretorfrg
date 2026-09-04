@@ -25,8 +25,19 @@ Este repositório existe apenas como **documentação e versionamento** do siste
 - Tarefas & Checklist automático por tipo de contrato
 - Autenticação JWT (PBKDF2 + HMAC-SHA256 via Web Crypto nativo do Workers, sem dependências externas)
 - Recepção automatizada no WhatsApp ("Fernanda") via Evolution API + n8n + API Claude
+- Divulgação automática de imóvel novo no Google Meu Negócio (ver seção abaixo)
 
 Ver [ARQUITETURA.md](./ARQUITETURA.md) para detalhes técnicos e [CHANGELOG.md](./CHANGELOG.md) para o histórico de versões.
+
+## Automação: Google Meu Negócio
+
+Toda vez que um imóvel novo é cadastrado no CRM (tabela `imoveis` no D1, `status = 'ativo'`), uma rotina agendada do Claude Code verifica o banco periodicamente e cria um post automático na ficha "Thiago Nunes corretor de imóveis F.R.G/ PR" no Google Meu Negócio, com tipo/bairro/valor/descrição do imóvel e botão de contato via WhatsApp.
+
+Detalhes técnicos:
+- Conexão feita via **Zapier** (app Google Business Profile), autorizada com a conta Google que administra a ficha em business.google.com — não usa a API do Google diretamente nem passa por `worker.js`.
+- Controle de duplicidade: coluna `gmb_postado_em` na tabela `imoveis` (D1), marcada após cada post bem-sucedido.
+- **Pendência:** o post ainda não inclui foto do imóvel — falta mapear a URL pública de servir fotos do R2 (rota `/fotos/imoveis/...` do Worker) por imóvel para preencher isso.
+- Essa automação roda como rotina do Claude Code (fora do `worker.js` publicado); se a sessão/rotina for removida, o post automático para de funcionar até ser recriada.
 
 ## MCP e Skills (Claude Code)
 

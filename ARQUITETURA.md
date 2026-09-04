@@ -39,6 +39,18 @@ Tabelas:
 - `leads_capture` (com campo `synced`)
 - `crm_state` (blob de estado geral, usado pelo sync legado)
 - `apify_leads` / `apify_sync_log` — de um robô separado de scraping de concorrentes em portais (não relacionado ao fluxo de leads do CRM)
+- `instagram_posts` — fila de posts automáticos no Instagram por imóvel (`imovel_id`, `foto_url`, `legenda`, `status`), ainda sem uso registrado
+
+`imoveis.gmb_postado_em` — coluna de controle usada pela automação de Google Meu Negócio (ver abaixo), marca quando o imóvel já foi postado para evitar duplicidade.
+
+## Automação de posts no Google Meu Negócio
+
+Roda **fora do Worker publicado**, como rotina agendada do Claude Code:
+1. A cada hora, consulta `imoveis` no D1 filtrando `status = 'ativo' AND gmb_postado_em IS NULL`.
+2. Para cada imóvel novo, cria um post via **Zapier** (app Google Business Profile, ação `create_post`) na ficha `locations/14972441350928932829` ("Thiago Nunes corretor de imóveis F.R.G/ PR"), com botão de ação apontando para `https://wa.me/5541998921475`.
+3. Marca `gmb_postado_em = datetime('now')` no imóvel após o post ter sucesso.
+
+Diferente da integração Meta (Instagram/Facebook), que usa tokens próprios guardados em `integracoes` e é chamada diretamente pelo Worker, esta automação passa pelo Zapier e depende da sessão/rotina do Claude Code estar ativa — não é código do `worker.js`.
 
 ## Frontend
 
