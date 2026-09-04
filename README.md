@@ -1,8 +1,19 @@
 # CRMTHIAGO
 
-CRM imobiliário próprio, construído sob medida para a operação autônoma de Thiago Nunes (CRECI-PR 50.265) em Fazenda Rio Grande/PR (@thiago_nunes_corretor).
+CRM imobiliário próprio, construído sob medida para a operação autônoma de Thiago Nunes (CRECI-PR 50.265) em Fazenda Rio Grande/PR (@thiagonunes_corretor).
 
 Este repositório existe apenas como **documentação e versionamento** do sistema — o CRM roda em produção 100% na Cloudflare (Worker + D1 + R2). Nada aqui precisa ser "deployado" a partir do GitHub; é o registro histórico/técnico do que já está no ar.
+
+## Os dois sistemas da operação
+
+| Sistema | O que é | Onde roda | Documentação |
+|---|---|---|---|
+| **CRMTHIAGO** | Ferramenta interna de gestão (leads, funil, imóveis, propostas, follow-up) | Cloudflare Workers + D1 + R2 | este README + [ARQUITETURA.md](./ARQUITETURA.md) |
+| **Site Imobiliário** | Vitrine pública: catálogo de imóveis e captação de leads | Lovable (TanStack Start) | [SITE-IMOBILIARIO.md](./SITE-IMOBILIARIO.md) |
+
+O site é a porta de entrada dos leads; o CRM é onde eles são trabalhados. A ligação entre os dois
+está preparada no código do site (webhook de leads + repository de imóveis) e ainda **não foi
+ativada** — ver [SITE-IMOBILIARIO.md](./SITE-IMOBILIARIO.md).
 
 ## Status atual
 

@@ -1,5 +1,12 @@
 # Changelog — CRMTHIAGO
 
+## Site Imobiliário (novo sistema, paralelo ao CRM)
+- Criada a plataforma imobiliária pública no Lovable (projeto `Prime Imóveis Online`): catálogo com filtros na URL, página de detalhe do imóvel, landings de venda/investidores/financiamento, blog, SEO técnico (JSON-LD, sitemap dinâmico, Open Graph) e integração central com WhatsApp
+- Arquitetura com repository pattern para imóveis e leads, preparada para consumir o Worker/D1 do CRM sem duplicar banco de dados
+- Configuração da marca centralizada em um único arquivo (`src/config/site.ts`)
+- Documentação, auditoria de código e pendências em [SITE-IMOBILIARIO.md](./SITE-IMOBILIARIO.md)
+- **Pendente:** 2 bugs de conversão identificados, painel administrativo, remoção dos imóveis de demonstração e publicação — bloqueados por falta de créditos no Lovable
+
 ## v8_6
 - Controle de estoque em Meus Imóveis: campo vendido/dataVenda, botão de marcar/reverter venda, filtros Estoque/Vendidos/Todos, cards de resumo
 - Imóveis vendidos saem dos alertas de vencimento e da contagem de "Imóveis Ativos" no dashboard
