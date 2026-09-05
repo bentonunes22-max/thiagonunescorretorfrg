@@ -49,6 +49,31 @@ O arquivo [CLAUDE.md](./CLAUDE.md) na raiz reúne as instruções permanentes de
 
 Também está incluída em `.claude/skills/humanizer/` a skill **humanizer** ([blader/humanizer](https://github.com/blader/humanizer), MIT), que reescreve texto com "cara de IA" para soar como escrito por uma pessoa, sem mudar o conteúdo. É útil para revisar mensagens geradas por IA antes de enviar a um lead ou cliente — por exemplo, respostas da recepcionista automatizada "Fernanda" no WhatsApp, textos de proposta ou de follow-up — removendo clichês, linguagem de vendas genérica e outros padrões típicos de texto gerado por IA.
 
+Em `.claude/skills/find-skill/` está a skill **find-skill**, adaptada de
+[fockus/claude-skill-find-skill](https://github.com/fockus/claude-skill-find-skill) (MIT —
+a licença é declarada no `pyproject.toml` do projeto original, que não publica arquivo
+`LICENSE`). Ela busca skills prontas num catálogo local de 592 skills vindas de 12 fontes
+públicas (Anthropic oficial, ComposioHQ, vercel-labs, VoltAgent, awesome-lists), ranqueadas
+por confiança da fonte e estrelas no GitHub, e conduz a instalação. O que foi mudado em
+relação ao original está em [`.claude/skills/find-skill/ORIGEM.md`](./.claude/skills/find-skill/ORIGEM.md).
+
+O catálogo empacotado envelhece: para reconstruí-lo, rode
+`bash .claude/skills/find-skill/scripts/atualizar-catalogo.sh`.
+
+Para usar a `find-skill` em **outro projeto** sem depender deste repositório aberto:
+
+```bash
+git clone --depth 1 https://github.com/bentonunes22-max/thiagonunescorretorfrg /tmp/crmthiago
+mkdir -p ~/.claude/skills
+cp -r /tmp/crmthiago/.claude/skills/find-skill ~/.claude/skills/find-skill
+rm -rf /tmp/crmthiago
+```
+
+Em `~/.claude/skills/` ela vale para todos os projetos daquela máquina. Em ambiente remoto
+e efêmero (Claude Code na web) esse diretório é descartado no fim da sessão — nesse caso o
+caminho que persiste de verdade é subir a pasta como skill de conta em
+claude.ai → Settings → Capabilities → Skills.
+
 ## Próximos passos em aberto
 
 - Sincronizar fotos de imóveis e anexos de contrato para o R2 (hoje ficam fora do sync com o D1 por limite de 2MB/linha)
