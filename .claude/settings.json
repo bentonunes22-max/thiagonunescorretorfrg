@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "obsidian-second-brain": {
+      "source": {
+        "source": "github",
+        "repo": "eugeniughelbur/obsidian-second-brain"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "obsidian-second-brain@obsidian-second-brain": true
+  }
+}
