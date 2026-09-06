@@ -15,6 +15,12 @@
 ## v8_3
 - Follow-up: textarea de mensagem, campo de próximo follow-up, histórico cronológico por lead
 
+## Ferramental de trabalho (Claude Code, não afeta o CRM em produção)
+- Plugin `obsidian-second-brain` (MIT, v0.15.0) ativado pelo projeto via
+  `.claude/settings.json`: 47 comandos de segundo cérebro no Obsidian, servidor
+  MCP `vault` e hooks de contexto de sessão. Documentação em
+  `docs/plugins/obsidian-second-brain/`
+
 ## Marcos de infraestrutura (paralelos às versões de interface)
 - Automação de post no Google Meu Negócio a cada imóvel novo cadastrado (via Zapier, rotina agendada do Claude Code) + coluna `imoveis.gmb_postado_em` no D1 para controle de duplicidade
 - Deploy do Cloudflare Worker `crm-thiago-leads-worker` + D1 `crm-thiago-leads`
