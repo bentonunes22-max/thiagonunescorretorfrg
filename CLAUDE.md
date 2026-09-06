@@ -51,6 +51,13 @@ chave ou string longa de aparência aleatória, pare e pergunte.
 - `.claude/skills/scrapegraph-mcp/` — scraping estruturado de portais
   imobiliários via MCP da ScrapeGraphAI. Use para monitorar anúncios e preços
   de concorrentes.
+- `.claude/skills/obsidian-second-brain/` — opera um cofre do Obsidian como
+  memória de trabalho (47 comandos). Use quando o pedido envolver salvar,
+  buscar ou organizar notas: leads, imóveis, decisões, ideias de conteúdo,
+  revisão de semana. Só funciona com `OBSIDIAN_VAULT_PATH` apontando para um
+  cofre existente. Não passe dado de lead pelos comandos de pesquisa
+  (`/research`, `/x-read`, `/youtube`) — eles enviam a consulta para APIs de
+  terceiros. Guia em português em `OBSIDIAN-SEGUNDO-CEREBRO.md`.
 - `.claude/skills/humanizer/` — reescreve texto com cara de IA para soar
   natural. Use antes de enviar qualquer texto gerado por IA a um lead ou
   cliente: respostas da recepcionista "Fernanda" no WhatsApp, textos de
