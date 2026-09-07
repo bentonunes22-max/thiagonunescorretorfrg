@@ -8,6 +8,14 @@
         "--header",
         "X-API-Key:${SCRAPEGRAPH_API_KEY}"
       ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest",
+        "--viewport-size=1080x1350"
+      ]
     }
   }
 }

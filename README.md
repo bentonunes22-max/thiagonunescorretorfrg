@@ -39,6 +39,37 @@ Detalhes técnicos:
 - **Pendência:** o post ainda não inclui foto do imóvel — falta mapear a URL pública de servir fotos do R2 (rota `/fotos/imoveis/...` do Worker) por imóvel para preencher isso.
 - Essa automação roda como rotina do Claude Code (fora do `worker.js` publicado); se a sessão/rotina for removida, o post automático para de funcionar até ser recriada.
 
+## Conteúdo: carrossel de Instagram
+
+Geração de carrossel para o `@thiago_nunes_corretor` direto no Claude Code, sem Canva:
+a skill monta os slides em HTML e o Playwright renderiza cada um como PNG no tamanho
+certo do Instagram.
+
+Como usar — no Claude Code, dentro deste repositório:
+
+```
+cria um carrossel sobre [tema]
+```
+
+A skill conduz um pipeline de 4 etapas (briefing → texto → direção visual → geração),
+pedindo aprovação em cada uma. Identidade visual, CRECI, formato e regras de conteúdo
+do mercado imobiliário já vêm pré-configurados em
+`.claude/skills/carrossel-instagram/references/marca-thiago.md` — não precisa
+reconfigurar a cada post.
+
+Pré-requisitos (uma vez, na máquina onde o Claude Code roda):
+
+- Node 18+ (o servidor MCP sobe via `npx`, não precisa instalar nada manualmente)
+- navegador do Playwright: `npx playwright install chromium`
+
+O servidor MCP `playwright` usa o perfil de navegador persistente padrão. Se você fizer
+login no Instagram por ele uma vez, as capturas seguintes de posts e perfis funcionam
+sem novo login.
+
+Os PNGs e o `roteiro.md` de cada carrossel são salvos **fora deste repositório**
+(pasta datada, ex.: `~/carrosseis/2026-09-07-financiamento-caixa/`). Este repositório é
+documentação do CRM, não acervo de mídia.
+
 ## MCP e Skills (Claude Code)
 
 Este repositório declara em `.mcp.json` o servidor MCP **scrapegraph-mcp** (ScrapeGraphAI), usado para dar a assistentes de IA acesso a scraping estruturado de páginas web — útil no contexto do robô de scraping de concorrentes em portais (ver `apify_leads`/`apify_sync_log` em [ARQUITETURA.md](./ARQUITETURA.md)).
@@ -48,6 +79,15 @@ Para usar, defina a variável de ambiente `SCRAPEGRAPH_API_KEY` com sua chave da
 O arquivo [CLAUDE.md](./CLAUDE.md) na raiz reúne as instruções permanentes de trabalho para o Claude Code neste repositório: idioma, cuidados com dados de leads e chaves de API, e as convenções de commit e PR.
 
 Também está incluída em `.claude/skills/humanizer/` a skill **humanizer** ([blader/humanizer](https://github.com/blader/humanizer), MIT), que reescreve texto com "cara de IA" para soar como escrito por uma pessoa, sem mudar o conteúdo. É útil para revisar mensagens geradas por IA antes de enviar a um lead ou cliente — por exemplo, respostas da recepcionista automatizada "Fernanda" no WhatsApp, textos de proposta ou de follow-up — removendo clichês, linguagem de vendas genérica e outros padrões típicos de texto gerado por IA.
+
+O `.mcp.json` também declara o servidor MCP **playwright** ([@playwright/mcp](https://github.com/microsoft/playwright-mcp), Apache-2.0, Microsoft), que dá ao Claude Code controle de um navegador real — abrir páginas, capturar screenshot e renderizar HTML como imagem. Ele não pede chave de API. É o motor de renderização da skill de carrossel descrita acima, e também serve para conferir anúncios de concorrentes em portais quando o scraping estruturado não basta.
+
+Em `.claude/skills/carrossel-instagram/` está a skill **carrossel-instagram** ([ahoydig/carrossel-instagram](https://github.com/ahoydig/carrossel-instagram), MIT, por [@flavioahoy](https://instagram.com/flavioahoy)), que gera carrosséis de Instagram a partir de um tema, URL, post ou ideia solta: 9 templates, 10 paletas e 8 efeitos tipográficos, com aprovação em cada etapa. A licença original está preservada em `.claude/skills/carrossel-instagram/LICENSE`.
+
+Sobre a skill original foram acrescentados, sem alterar o pipeline:
+
+- `references/marca-thiago.md` — preset da marca (formato 4:5, paletas Navy/Forest/Charcoal, fontes, CTA com CRECI-PR 50.265) e as regras de conteúdo de corretor: CRECI visível, nada de prometer aprovação de financiamento, nenhum número de mercado sem fonte, e dado de cliente real fora do slide por LGPD;
+- ganchos no `SKILL.md` para ler esse preset antes do Gate 1 e no Gate 3.
 
 ## Próximos passos em aberto
 
