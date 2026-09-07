@@ -28,6 +28,34 @@ versões em [CHANGELOG.md](./CHANGELOG.md) e visão geral em
 [README.md](./README.md). Leia esses arquivos antes de responder qualquer
 coisa sobre a arquitetura, em vez de supor como o sistema funciona.
 
+## Parâmetros de viabilidade — incorporação e condomínios
+
+Regra fixa do Thiago, válida para **todo** estudo de projeto de apartamentos,
+condomínio ou incorporação: o preço do terreno tem de equivaler de **14% a 20%
+do VGV**, sendo 20% o teto máximo. Aplique isso sem precisar ser lembrado
+sempre que aparecer um terreno com estudo de projeto.
+
+VGV (Valor Geral de Vendas) = soma do preço de venda de todas as unidades do
+empreendimento, a preço de mercado da região.
+
+Leitura do percentual (preço do terreno ÷ VGV):
+
+- **até 14%** — terreno bem comprado, folga na margem;
+- **14% a 20%** — faixa de trabalho, viabilidade normal;
+- **acima de 20%** — reprovar. Ou o preço do terreno cai até caber na faixa,
+  ou o VGV sobe (mais unidades, produto melhor, outro padrão) para o
+  percentual voltar ao teto. Não siga com o estudo tratando isso como
+  detalhe: avise que estourou.
+
+Em qualquer análise, mostre o cálculo e os dois números de referência:
+
+- preço máximo admissível do terreno = VGV × 0,20;
+- preço confortável = VGV × 0,14.
+
+Em negociação por permuta, converta a permuta em dinheiro (unidades ofertadas
+× preço de venda) antes de calcular o percentual — o que vale é o custo real
+do terreno dentro do VGV, não a forma de pagamento.
+
 ## Dados de clientes e leads
 
 Os dados que circulam neste projeto são reais: nomes, telefones, endereços,
