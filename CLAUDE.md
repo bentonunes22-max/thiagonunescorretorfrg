@@ -83,6 +83,11 @@ chave ou string longa de aparência aleatória, pare e pergunte.
   natural. Use antes de enviar qualquer texto gerado por IA a um lead ou
   cliente: respostas da recepcionista "Fernanda" no WhatsApp, textos de
   proposta, mensagens de follow-up e disparo em massa.
+- `.claude/skills/carrossel-instagram/` — gera carrossel de Instagram (HTML
+  renderizado como PNG pelo MCP `playwright`). Antes do Gate 1, leia sempre
+  `references/marca-thiago.md`: ele fixa formato, paletas, fontes, CTA com
+  CRECI e as regras de conteúdo do imobiliário, e evita perguntar identidade
+  visual a cada post. PNG de carrossel não entra neste repositório.
 
 ## Convenções de trabalho
 
