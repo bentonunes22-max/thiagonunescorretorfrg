@@ -16,6 +16,13 @@
 - CRUD genérico autenticado: `/api/leads`, `/api/imoveis`, `/api/clientes`
 - Autenticação aceita token tanto via header `Authorization` quanto via query string `?token=...`
 
+### Canal de alarme no WhatsApp
+- `POST /api/alarmes` — cria lembrete (aceita `quando` em ISO ou `frase` em português)
+- `GET /api/alarmes` — lista por status (`pendente` por padrão)
+- `DELETE /api/alarmes/:id` — cancela
+- `POST /api/alarmes/teste` — envia mensagem de teste
+- Cron Trigger `*/5 * * * *` → handler `scheduled()` varre a fila e despacha
+
 ### Fotos (R2)
 - Bucket: `crm-thiago-fotos-imoveis`
 - Binding no Worker: `fotos_balde`
@@ -40,8 +47,44 @@ Tabelas:
 - `crm_state` (blob de estado geral, usado pelo sync legado)
 - `apify_leads` / `apify_sync_log` — de um robô separado de scraping de concorrentes em portais (não relacionado ao fluxo de leads do CRM)
 - `instagram_posts` — fila de posts automáticos no Instagram por imóvel (`imovel_id`, `foto_url`, `legenda`, `status`), ainda sem uso registrado
+- `alarmes` — fila de lembretes/alarmes enviados ao WhatsApp do Thiago (ver abaixo). Schema em [`sql/2026-09-alarmes.sql`](./sql/2026-09-alarmes.sql)
 
 `imoveis.gmb_postado_em` — coluna de controle usada pela automação de Google Meu Negócio (ver abaixo), marca quando o imóvel já foi postado para evitar duplicidade.
+
+## Canal de alarme e lembrete no WhatsApp
+
+Manda aviso no WhatsApp do próprio Thiago (não do cliente), pela **mesma
+instância da Evolution API que roda a recepcionista "Fernanda"** — sem custo
+adicional e sem depender de template aprovado pela Meta.
+
+Dois gatilhos:
+
+1. **Lead novo** — o handler do `POST /lead`, depois de gravar, chama
+   `avisarLeadNovo()`: enfileira o alarme na tabela `alarmes` (índice único por
+   `lead_id` evita duplicata se o webhook reenviar o evento) e dispara o envio em
+   `ctx.waitUntil()`, sem segurar a resposta do webhook. Se o envio imediato
+   falhar, o cron pega a linha pendente no ciclo seguinte.
+2. **Lembrete avulso** — linha em `alarmes` com `disparar_em`, criada pelo CRM
+   (`POST /api/alarmes`) ou por frase solta em português
+   (`{"frase": "me lembra amanhã 9h de ligar pro proprietário"}`), interpretada por
+   `interpretarLembrete()`. Aceita repetição diária/semanal/mensal: ao enviar um
+   alarme repetido, o despacho já grava a próxima ocorrência.
+
+Despacho: Cron Trigger a cada 5 minutos → `scheduled()` → `despacharAlarmes()`,
+que lê os pendentes vencidos, envia, marca `enviado` e desiste depois de 3
+tentativas (`status = 'erro'`), para uma instância fora do ar não virar reenvio
+eterno.
+
+Fuso: tudo é gravado em UTC (mesmo relógio do Worker e do `datetime('now')` do
+D1) e convertido para Brasília (UTC-3 fixo) só na entrada e na exibição.
+
+Configuração — variáveis do Worker, nenhuma chave no repositório:
+`EVOLUTION_URL`, `EVOLUTION_INSTANCIA`, `EVOLUTION_APIKEY` (secret) e
+`ALARME_DESTINO` (número de destino com DDI).
+
+Código de referência: [`snippets/alarme-whatsapp.js`](./snippets/alarme-whatsapp.js).
+Como todo o resto deste repositório, **não é deployado daqui** — precisa ser
+colado no `worker.js` publicado no painel da Cloudflare.
 
 ## Automação de posts no Google Meu Negócio
 

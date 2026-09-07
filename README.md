@@ -26,6 +26,7 @@ Este repositório existe apenas como **documentação e versionamento** do siste
 - Autenticação JWT (PBKDF2 + HMAC-SHA256 via Web Crypto nativo do Workers, sem dependências externas)
 - Recepção automatizada no WhatsApp ("Fernanda") via Evolution API + n8n + API Claude
 - Divulgação automática de imóvel novo no Google Meu Negócio (ver seção abaixo)
+- Canal de alarme no WhatsApp: aviso de lead novo e lembretes avulsos (ver seção abaixo)
 
 Ver [ARQUITETURA.md](./ARQUITETURA.md) para detalhes técnicos e [CHANGELOG.md](./CHANGELOG.md) para o histórico de versões.
 
@@ -38,6 +39,26 @@ Detalhes técnicos:
 - Controle de duplicidade: coluna `gmb_postado_em` na tabela `imoveis` (D1), marcada após cada post bem-sucedido.
 - **Pendência:** o post ainda não inclui foto do imóvel — falta mapear a URL pública de servir fotos do R2 (rota `/fotos/imoveis/...` do Worker) por imóvel para preencher isso.
 - Essa automação roda como rotina do Claude Code (fora do `worker.js` publicado); se a sessão/rotina for removida, o post automático para de funcionar até ser recriada.
+
+## Canal de alarme no WhatsApp
+
+Avisos do CRM chegam no WhatsApp do próprio Thiago pela mesma instância da
+Evolution API que já roda a recepcionista "Fernanda".
+
+- **Lead novo:** assim que o webhook `POST /lead` grava um lead, chega a mensagem
+  com nome, telefone, origem, interesse e link `wa.me` para abrir a conversa.
+- **Lembrete avulso:** `POST /api/alarmes` com data (`quando`) ou com frase solta
+  (`frase`) — "me lembra amanhã 9h de ligar pro proprietário do Green Field",
+  "lembrete 12/09 14:30 visita Eucaliptos", "em 40 minutos confirmar a vistoria".
+  Aceita repetição diária, semanal e mensal.
+
+Um Cron Trigger do Worker varre a fila (tabela `alarmes` no D1) a cada 5 minutos
+e dispara o que venceu. Detalhes em [ARQUITETURA.md](./ARQUITETURA.md).
+
+Para instalar: rodar [`sql/2026-09-alarmes.sql`](./sql/2026-09-alarmes.sql) no D1
+e colar [`snippets/alarme-whatsapp.js`](./snippets/alarme-whatsapp.js) no
+`worker.js` publicado (o passo a passo está no fim do próprio arquivo). Como o
+restante deste repositório, o código **não vai para produção a partir daqui**.
 
 ## MCP e Skills (Claude Code)
 
