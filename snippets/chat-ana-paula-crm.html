@@ -182,7 +182,9 @@
 
   // ---- Configuração -------------------------------------------------------
   var API = 'https://crm-thiago-leads-worker.bento-nunes22.workers.dev';
-  var CHAVES_TOKEN = ['token', 'jwt', 'crmToken', 'authToken', 'crm_token'];
+  // O CRM do Thiago guarda em "crmToken". Os outros nomes ficam como rede de
+  // segurança, e se nenhum bater o painel procura pelo formato do JWT.
+  var CHAVES_TOKEN = ['crmToken', 'crm_token', 'crm token', 'token', 'jwt', 'authToken'];
   var INTERVALO_MS = 45000;
   var JANELA_H = 24;
 
@@ -197,11 +199,41 @@
   ['botao','badge','painel','conversa','fechar','som','texto','enviar','status','subtitulo','sugestoes']
     .forEach(function (n) { el[n] = document.getElementById('crmav-' + n); });
 
+  /** JWT é "cabeçalho.corpo.assinatura" — dá para reconhecer sem saber o nome. */
+  function pareceJWT(valor) {
+    return typeof valor === 'string' && /^[\w-]+\.[\w-]+\.[\w-]+$/.test(valor.trim());
+  }
+
+  /** Aceita a string crua, com aspas, ou um objeto de sessão com o token dentro. */
+  function extrair(bruto) {
+    if (!bruto) return null;
+    var v = String(bruto).trim().replace(/^"|"$/g, '');
+    if (pareceJWT(v)) return v;
+    if (v.charAt(0) !== '{') return null;
+    try {
+      var obj = JSON.parse(v);
+      var campos = ['token', 'jwt', 'access_token', 'accessToken', 'crmToken'];
+      for (var i = 0; i < campos.length; i++) {
+        if (pareceJWT(obj[campos[i]])) return String(obj[campos[i]]).trim();
+      }
+    } catch (e) { /* não era JSON */ }
+    return null;
+  }
+
   function pegarToken() {
+    // 1) os nomes conhecidos, na ordem
     for (var i = 0; i < CHAVES_TOKEN.length; i++) {
-      var v = localStorage.getItem(CHAVES_TOKEN[i]);
-      if (v && v.length > 20) return v.replace(/^"|"$/g, '');
+      var achado = extrair(localStorage.getItem(CHAVES_TOKEN[i]));
+      if (achado) return achado;
     }
+    // 2) qualquer chave guardando algo com cara de JWT — se o CRM mudar o nome
+    //    do campo um dia, o chat continua funcionando sozinho
+    try {
+      for (var j = 0; j < localStorage.length; j++) {
+        var achado2 = extrair(localStorage.getItem(localStorage.key(j)));
+        if (achado2) return achado2;
+      }
+    } catch (e) { /* navegador bloqueando storage */ }
     return null;
   }
 
