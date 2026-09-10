@@ -27,7 +27,7 @@ Este repositório existe apenas como **documentação e versionamento** do siste
 - Recepção automatizada no WhatsApp ("Fernanda") via Evolution API + n8n + API Claude
 - Divulgação automática de imóvel novo no Google Meu Negócio (ver seção abaixo)
 - Alerta de lead novo e lembretes de agenda/tarefas no WhatsApp (ver seção abaixo)
-- Painel de avisos dentro do próprio CRM, com contador e som (ver seção abaixo)
+- Chat da Ana Paula dentro do CRM, cobrando lead parado, follow-up e agenda (ver seção abaixo)
 
 Ver [ARQUITETURA.md](./ARQUITETURA.md) para detalhes técnicos e [CHANGELOG.md](./CHANGELOG.md) para o histórico de versões.
 
@@ -64,17 +64,27 @@ repositório, **não vai para produção a partir daqui**.
 Detalhes em [ARQUITETURA.md](./ARQUITETURA.md), que traz também as divergências
 encontradas entre esta documentação e o worker que está no ar.
 
-## Painel de avisos dentro do CRM
+## Chat da Ana Paula dentro do CRM
 
-Com o CRM aberto, o mesmo aviso que vai para o WhatsApp aparece numa janela
-lateral: botão com contador no canto, lista de lead novo, lembrete e compromisso,
-som curto quando chega algo e link direto para abrir a conversa do lead no
-WhatsApp. Consulta a cada 45 segundos e para sozinho quando a aba fica escondida.
+Com o CRM aberto, uma conversa na lateral faz o papel de secretária: abre o dia
+dizendo o que está atrasado, avisa quando cai lead novo e responde pergunta sobre
+a carteira.
 
-São duas peças: a rota `GET /api/avisos` no Worker
-([`snippets/painel-avisos-worker.js`](./snippets/painel-avisos-worker.js)) e um
-bloco de HTML/CSS/JS sem dependência nenhuma, colado antes do `</body>` do CRM
-([`snippets/painel-avisos-crm.html`](./snippets/painel-avisos-crm.html)).
+- **Resumo do dia:** agenda de hoje, follow-up vencido, tarefa vencida e os leads
+  parados que valem mais a pena retomar primeiro — ordenados por estágio e
+  temperatura, não por antiguidade.
+- **Avisos ao vivo:** lead novo, lembrete e compromisso entram na conversa como
+  cartão, com link para abrir o WhatsApp do lead.
+- **Conversa:** dá para perguntar "quem eu devia ligar primeiro?" e ela responde
+  com os dados reais do CRM. Escrevendo "me lembra amanhã 9h de ligar pro
+  proprietário", ela agenda na hora — e o lembrete chega no WhatsApp também.
+
+Atenção para não confundir: a Ana Paula que atende lead no WhatsApp é outra, com
+outro prompt e outro histórico. Esta aqui só fala com o Thiago.
+
+Três peças: `snippets/assistente-ana-paula-worker.js` e
+`snippets/painel-avisos-worker.js` no Worker, `sql/2026-09-assistente.sql` no D1
+e `snippets/chat-ana-paula-crm.html` colado antes do `</body>` do CRM.
 
 ## MCP e Skills (Claude Code)
 

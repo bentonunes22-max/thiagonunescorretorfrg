@@ -21,8 +21,11 @@
 - `POST /api/lembretes/teste` — envia mensagem de teste
 - Despacho dentro do `scheduled()` que já existe, junto das outras tarefas do cron
 
-### Avisos dentro do CRM
-- `GET /api/avisos?desde=<ISO>` — leads novos, lembretes disparados e compromissos avisados, em ordem cronológica inversa. Só leitura: não cria nem grava nada
+### Avisos e assistente dentro do CRM
+- `GET /api/avisos?desde=<ISO>` — leads novos, lembretes disparados e compromissos avisados. Só leitura
+- `GET /api/assistente` — histórico da conversa + resumo do dia (montado em SQL, sem IA)
+- `POST /api/assistente/mensagem` — conversa com a Ana Paula interna
+- `POST /api/assistente/limpar` — esquece o histórico
 
 ### Fotos (R2)
 - Bucket: `crm-thiago-fotos-imoveis`
@@ -49,6 +52,8 @@ Tabelas:
 - `apify_leads` / `apify_sync_log` — de um robô separado de scraping de concorrentes em portais (não relacionado ao fluxo de leads do CRM)
 - `instagram_posts` — fila de posts automáticos no Instagram por imóvel (`imovel_id`, `foto_url`, `legenda`, `status`), ainda sem uso registrado
 - `agenda`, `tarefas`, `follow_ups` — compromissos, pendências e retornos, todos com CRUD em `/api/...`. As colunas `lembrar_em` e `alertado_em` (ver [`sql/2026-09-lembretes.sql`](./sql/2026-09-lembretes.sql)) controlam o aviso no WhatsApp
+- `ana_paula_conversas` — conversas da assistente com LEADS, pelo WhatsApp
+- `assistente_conversa` — conversa da assistente com o THIAGO, dentro do CRM (ver [`sql/2026-09-assistente.sql`](./sql/2026-09-assistente.sql)). Tabela separada de propósito: prompt, interlocutor e ciclo de vida diferentes
 - `integracoes` — credenciais em banco, lidas por `lerIntegracao()`: `green_api_id_instance`, `green_api_token_instance`, `alerta_whatsapp_telefone`, chaves da Meta, `openai_api_key` e dados de PIX
 
 `imoveis.gmb_postado_em` — coluna de controle usada pela automação de Google Meu Negócio (ver abaixo), marca quando o imóvel já foi postado para evitar duplicidade.
@@ -90,33 +95,52 @@ UTC, então essas colunas nunca devem ser comparadas com `datetime('now')`.
 Código de referência: [`snippets/lembrete-whatsapp.js`](./snippets/lembrete-whatsapp.js).
 Como todo o resto deste repositório, **não é deployado daqui**.
 
-## Painel de avisos dentro do CRM
+## Chat da Ana Paula dentro do CRM
 
-A mesma informação do WhatsApp aparece numa janela lateral do CRM, para quem
-está com o sistema aberto não precisar olhar o celular.
+Duas Ana Paulas, com o mesmo nome e nada mais em comum: a do WhatsApp **qualifica
+lead** (prompt `ANA_PAULA_SISTEMA`, histórico em `ana_paula_conversas`); a do CRM
+**cobra o Thiago** (histórico em `assistente_conversa`). Só a segunda é descrita
+aqui.
 
-- **Servidor:** `GET /api/avisos` junta três fontes que já existem — `leads`
-  (por `criado_em`), `tarefas` e `agenda` (por `alertado_em`, preenchido pelo
-  despacho de lembretes). Nenhuma tabela nova, nenhuma gravação: se o aviso já
-  saiu no WhatsApp, ele aparece no painel; são as duas pontas do mesmo evento.
-- **Navegador:** bloco de HTML/CSS/JS sem dependência, colado no fim do HTML do
-  CRM. Botão flutuante com contador, painel lateral, som curto e notificação do
-  sistema operacional quando a permissão é concedida.
-- **Autenticação:** o painel manda o mesmo JWT que o CRM já guarda no
-  `localStorage`, no header `Authorization`. O CORS já é liberado por
-  `aplicarCors()`, então funciona com o CRM aberto de qualquer endereço.
-- **Consulta:** a cada 45 segundos, e para de consultar quando a aba está
-  escondida (`document.hidden`), voltando a atualizar assim que o Thiago
-  retorna para a aba.
-- **O que é "novo":** o painel guarda no `localStorage` o instante da última
-  leitura. O contador zera ao abrir, mas o destaque verde de cada item só sai
-  quando o painel é fechado — senão o aviso sumiria antes de ser lido.
+### O que ela acompanha
 
-Fuso: `leads.criado_em` está em UTC e `alertado_em` em horário de Brasília; a
-rota converte tudo para UTC ISO e o navegador exibe no fuso local.
+`montarPanorama()` monta em SQL, sem IA:
 
-Código de referência: [`snippets/painel-avisos-worker.js`](./snippets/painel-avisos-worker.js)
-e [`snippets/painel-avisos-crm.html`](./snippets/painel-avisos-crm.html).
+- **leads parados** — `estagio` fora de Fechado/Perdido e `atualizado_em` com mais
+  de 7 dias;
+- **follow-ups vencidos** — `follow_ups.proximo_contato` no passado, status Ativo;
+- **agenda** — compromissos de hoje e amanhã;
+- **tarefas vencidas** — pendentes com `vencimento` no passado.
+
+Lead parado não é tudo igual, então há um score: `estágio × 10 + temperatura × 5 +
+dias/3`. Proposta enviada esfriando há 9 dias vem antes de lead novo frio de 42 —
+ordena por onde há dinheiro mais perto de fechar, não por quem está parado há mais
+tempo. Mostra os 5 primeiros e diz quantos ficaram de fora.
+
+### Onde a IA entra (e onde não entra)
+
+- **O resumo do dia não passa pela IA.** É texto montado em código a partir do
+  panorama: de graça, instantâneo, e não inventa nome de cliente. Entregue uma vez
+  por dia — reabrir o CRM cinco vezes não repete a cobrança (controle em
+  `assistente_conversa.resumo_em`).
+- **"Me lembra amanhã 9h de ..." também não.** Cai no `interpretarLembrete()` que
+  já existe e vira tarefa na hora. Funciona mesmo com a OpenAI fora do ar.
+- **A IA entra só quando o Thiago escreve outra coisa**, via `chamarOpenAI()`
+  (gpt-4o-mini, chave em `integracoes`), com o panorama do dia no prompt de
+  sistema para ela responder com dado real. Se a OpenAI falhar, ela ainda entrega
+  a lista do que está atrasado.
+
+### Na tela
+
+O bloco de HTML/CSS/JS (`snippets/chat-ana-paula-crm.html`) desenha uma conversa
+única: os avisos de `/api/avisos` entram como cartões dela na linha do tempo, as
+respostas como balões, e o Thiago escreve embaixo. Botão flutuante com contador,
+som curto, notificação do sistema, sugestões rápidas ("o que tenho hoje?",
+"leads parados") e link `wa.me` direto no aviso de lead novo.
+
+Código: [`snippets/assistente-ana-paula-worker.js`](./snippets/assistente-ana-paula-worker.js),
+[`snippets/painel-avisos-worker.js`](./snippets/painel-avisos-worker.js) e
+[`snippets/chat-ana-paula-crm.html`](./snippets/chat-ana-paula-crm.html).
 
 ## Divergências entre esta documentação e o worker publicado
 

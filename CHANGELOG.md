@@ -1,9 +1,12 @@
 # Changelog — CRMTHIAGO
 
 ## v8_7
-- Painel de avisos dentro do CRM: botão flutuante com contador, janela lateral com lead novo, lembrete e compromisso, som curto e notificação do sistema
-- Item de lead traz link direto para abrir a conversa no WhatsApp
-- Consulta a cada 45s, pausada enquanto a aba está escondida; o que é "novo" fica marcado até o painel ser fechado
+- Chat da Ana Paula dentro do CRM: janela lateral com resumo do dia, avisos ao vivo e conversa
+- Resumo diário com agenda, follow-up vencido, tarefa vencida e leads parados priorizados por estágio e temperatura (não por antiguidade)
+- Avisos de lead novo, lembrete e compromisso entram na conversa; lead novo com link direto para o WhatsApp
+- "Me lembra amanhã 9h de..." escrito no chat cria o lembrete na hora, sem passar pela IA
+- Botão flutuante com contador, som curto e notificação do sistema; consulta a cada 45s, pausada com a aba escondida
+- Tabela `assistente_conversa` no D1, separada das conversas com lead
 
 ## v8_6
 - Controle de estoque em Meus Imóveis: campo vendido/dataVenda, botão de marcar/reverter venda, filtros Estoque/Vendidos/Todos, cards de resumo
