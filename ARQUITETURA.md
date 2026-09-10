@@ -21,6 +21,9 @@
 - `POST /api/lembretes/teste` — envia mensagem de teste
 - Despacho dentro do `scheduled()` que já existe, junto das outras tarefas do cron
 
+### Avisos dentro do CRM
+- `GET /api/avisos?desde=<ISO>` — leads novos, lembretes disparados e compromissos avisados, em ordem cronológica inversa. Só leitura: não cria nem grava nada
+
 ### Fotos (R2)
 - Bucket: `crm-thiago-fotos-imoveis`
 - Binding no Worker: `fotos_balde`
@@ -86,6 +89,34 @@ UTC, então essas colunas nunca devem ser comparadas com `datetime('now')`.
 
 Código de referência: [`snippets/lembrete-whatsapp.js`](./snippets/lembrete-whatsapp.js).
 Como todo o resto deste repositório, **não é deployado daqui**.
+
+## Painel de avisos dentro do CRM
+
+A mesma informação do WhatsApp aparece numa janela lateral do CRM, para quem
+está com o sistema aberto não precisar olhar o celular.
+
+- **Servidor:** `GET /api/avisos` junta três fontes que já existem — `leads`
+  (por `criado_em`), `tarefas` e `agenda` (por `alertado_em`, preenchido pelo
+  despacho de lembretes). Nenhuma tabela nova, nenhuma gravação: se o aviso já
+  saiu no WhatsApp, ele aparece no painel; são as duas pontas do mesmo evento.
+- **Navegador:** bloco de HTML/CSS/JS sem dependência, colado no fim do HTML do
+  CRM. Botão flutuante com contador, painel lateral, som curto e notificação do
+  sistema operacional quando a permissão é concedida.
+- **Autenticação:** o painel manda o mesmo JWT que o CRM já guarda no
+  `localStorage`, no header `Authorization`. O CORS já é liberado por
+  `aplicarCors()`, então funciona com o CRM aberto de qualquer endereço.
+- **Consulta:** a cada 45 segundos, e para de consultar quando a aba está
+  escondida (`document.hidden`), voltando a atualizar assim que o Thiago
+  retorna para a aba.
+- **O que é "novo":** o painel guarda no `localStorage` o instante da última
+  leitura. O contador zera ao abrir, mas o destaque verde de cada item só sai
+  quando o painel é fechado — senão o aviso sumiria antes de ser lido.
+
+Fuso: `leads.criado_em` está em UTC e `alertado_em` em horário de Brasília; a
+rota converte tudo para UTC ISO e o navegador exibe no fuso local.
+
+Código de referência: [`snippets/painel-avisos-worker.js`](./snippets/painel-avisos-worker.js)
+e [`snippets/painel-avisos-crm.html`](./snippets/painel-avisos-crm.html).
 
 ## Divergências entre esta documentação e o worker publicado
 

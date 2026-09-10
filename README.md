@@ -27,6 +27,7 @@ Este repositório existe apenas como **documentação e versionamento** do siste
 - Recepção automatizada no WhatsApp ("Fernanda") via Evolution API + n8n + API Claude
 - Divulgação automática de imóvel novo no Google Meu Negócio (ver seção abaixo)
 - Alerta de lead novo e lembretes de agenda/tarefas no WhatsApp (ver seção abaixo)
+- Painel de avisos dentro do próprio CRM, com contador e som (ver seção abaixo)
 
 Ver [ARQUITETURA.md](./ARQUITETURA.md) para detalhes técnicos e [CHANGELOG.md](./CHANGELOG.md) para o histórico de versões.
 
@@ -62,6 +63,18 @@ repositório, **não vai para produção a partir daqui**.
 
 Detalhes em [ARQUITETURA.md](./ARQUITETURA.md), que traz também as divergências
 encontradas entre esta documentação e o worker que está no ar.
+
+## Painel de avisos dentro do CRM
+
+Com o CRM aberto, o mesmo aviso que vai para o WhatsApp aparece numa janela
+lateral: botão com contador no canto, lista de lead novo, lembrete e compromisso,
+som curto quando chega algo e link direto para abrir a conversa do lead no
+WhatsApp. Consulta a cada 45 segundos e para sozinho quando a aba fica escondida.
+
+São duas peças: a rota `GET /api/avisos` no Worker
+([`snippets/painel-avisos-worker.js`](./snippets/painel-avisos-worker.js)) e um
+bloco de HTML/CSS/JS sem dependência nenhuma, colado antes do `</body>` do CRM
+([`snippets/painel-avisos-crm.html`](./snippets/painel-avisos-crm.html)).
 
 ## MCP e Skills (Claude Code)
 

@@ -1,5 +1,10 @@
 # Changelog — CRMTHIAGO
 
+## v8_7
+- Painel de avisos dentro do CRM: botão flutuante com contador, janela lateral com lead novo, lembrete e compromisso, som curto e notificação do sistema
+- Item de lead traz link direto para abrir a conversa no WhatsApp
+- Consulta a cada 45s, pausada enquanto a aba está escondida; o que é "novo" fica marcado até o painel ser fechado
+
 ## v8_6
 - Controle de estoque em Meus Imóveis: campo vendido/dataVenda, botão de marcar/reverter venda, filtros Estoque/Vendidos/Todos, cards de resumo
 - Imóveis vendidos saem dos alertas de vencimento e da contagem de "Imóveis Ativos" no dashboard
