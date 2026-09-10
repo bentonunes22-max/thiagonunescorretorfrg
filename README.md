@@ -84,7 +84,9 @@ outro prompt e outro histórico. Esta aqui só fala com o Thiago.
 
 Três peças: `snippets/assistente-ana-paula-worker.js` e
 `snippets/painel-avisos-worker.js` no Worker, `sql/2026-09-assistente.sql` no D1
-e `snippets/chat-ana-paula-crm.html` colado antes do `</body>` do CRM.
+e `snippets/chat-ana-paula-crm.html` colado antes do `</body>` do CRM. O passo a
+passo com os caminhos do painel da Cloudflare está em
+[INSTALACAO.md](./INSTALACAO.md).
 
 ## MCP e Skills (Claude Code)
 
