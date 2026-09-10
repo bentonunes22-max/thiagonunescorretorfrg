@@ -16,12 +16,10 @@
 - CRUD genérico autenticado: `/api/leads`, `/api/imoveis`, `/api/clientes`
 - Autenticação aceita token tanto via header `Authorization` quanto via query string `?token=...`
 
-### Canal de alarme no WhatsApp
-- `POST /api/alarmes` — cria lembrete (aceita `quando` em ISO ou `frase` em português)
-- `GET /api/alarmes` — lista por status (`pendente` por padrão)
-- `DELETE /api/alarmes/:id` — cancela
-- `POST /api/alarmes/teste` — envia mensagem de teste
-- Cron Trigger `*/5 * * * *` → handler `scheduled()` varre a fila e despacha
+### Lembretes no WhatsApp
+- `POST /api/lembretes` — cria lembrete (aceita `quando` pronto ou `frase` em português)
+- `POST /api/lembretes/teste` — envia mensagem de teste
+- Despacho dentro do `scheduled()` que já existe, junto das outras tarefas do cron
 
 ### Fotos (R2)
 - Bucket: `crm-thiago-fotos-imoveis`
@@ -47,44 +45,68 @@ Tabelas:
 - `crm_state` (blob de estado geral, usado pelo sync legado)
 - `apify_leads` / `apify_sync_log` — de um robô separado de scraping de concorrentes em portais (não relacionado ao fluxo de leads do CRM)
 - `instagram_posts` — fila de posts automáticos no Instagram por imóvel (`imovel_id`, `foto_url`, `legenda`, `status`), ainda sem uso registrado
-- `alarmes` — fila de lembretes/alarmes enviados ao WhatsApp do Thiago (ver abaixo). Schema em [`sql/2026-09-alarmes.sql`](./sql/2026-09-alarmes.sql)
+- `agenda`, `tarefas`, `follow_ups` — compromissos, pendências e retornos, todos com CRUD em `/api/...`. As colunas `lembrar_em` e `alertado_em` (ver [`sql/2026-09-lembretes.sql`](./sql/2026-09-lembretes.sql)) controlam o aviso no WhatsApp
+- `integracoes` — credenciais em banco, lidas por `lerIntegracao()`: `green_api_id_instance`, `green_api_token_instance`, `alerta_whatsapp_telefone`, chaves da Meta, `openai_api_key` e dados de PIX
 
 `imoveis.gmb_postado_em` — coluna de controle usada pela automação de Google Meu Negócio (ver abaixo), marca quando o imóvel já foi postado para evitar duplicidade.
 
-## Canal de alarme e lembrete no WhatsApp
+## Alerta de lead novo (já em produção)
 
-Manda aviso no WhatsApp do próprio Thiago (não do cliente), pela **mesma
-instância da Evolution API que roda a recepcionista "Fernanda"** — sem custo
-adicional e sem depender de template aprovado pela Meta.
+`registrarLeadEntrante()` é o caminho único de entrada de lead — site, webhook e
+sincronização com a Meta passam todos por ela — e sempre chama
+`enviarAlertaLead()`, que manda no WhatsApp do Thiago nome, telefone, e-mail,
+interesse e origem. O destino é a chave `alerta_whatsapp_telefone` da tabela
+`integracoes`; se ela estiver vazia, a função sai em silêncio, sem erro.
 
-Dois gatilhos:
+## Lembretes no WhatsApp
 
-1. **Lead novo** — o handler do `POST /lead`, depois de gravar, chama
-   `avisarLeadNovo()`: enfileira o alarme na tabela `alarmes` (índice único por
-   `lead_id` evita duplicata se o webhook reenviar o evento) e dispara o envio em
-   `ctx.waitUntil()`, sem segurar a resposta do webhook. Se o envio imediato
-   falhar, o cron pega a linha pendente no ciclo seguinte.
-2. **Lembrete avulso** — linha em `alarmes` com `disparar_em`, criada pelo CRM
-   (`POST /api/alarmes`) ou por frase solta em português
-   (`{"frase": "me lembra amanhã 9h de ligar pro proprietário"}`), interpretada por
-   `interpretarLembrete()`. Aceita repetição diária/semanal/mensal: ao enviar um
-   alarme repetido, o despacho já grava a próxima ocorrência.
+Complementa o alerta de lead: avisa o Thiago dos compromissos e pendências que
+ele já cadastra no CRM, em vez de criar uma agenda paralela.
 
-Despacho: Cron Trigger a cada 5 minutos → `scheduled()` → `despacharAlarmes()`,
-que lê os pendentes vencidos, envia, marca `enviado` e desiste depois de 3
-tentativas (`status = 'erro'`), para uma instância fora do ar não virar reenvio
-eterno.
+- **De onde sai o lembrete:** das tabelas que já existem — `tarefas` (pendência,
+  com `lembrar_em`) e `agenda` (compromisso; sem `lembrar_em`, avisa 1h antes de
+  `data` + `hora_inicio`). Duas colunas novas em cada uma: `lembrar_em` (quando
+  avisar) e `alertado_em` (quando o aviso saiu), no mesmo padrão de
+  `imoveis.gmb_postado_em`.
+- **Como se cria:** pelo CRUD que já existe, ou por `POST /api/lembretes` com
+  frase solta — `{"frase": "me lembra amanhã 9h de ligar pro proprietário"}` —
+  interpretada por `interpretarLembrete()`, que entende "hoje", "amanhã",
+  "sexta", "12/09", "14:30", "9h" e "em 40 minutos".
+- **Como sai:** pela `enviarWhatsapp()` que já existe (Green API), para o número
+  de `alerta_whatsapp_telefone`. Nenhuma credencial nova.
+- **Quando sai:** no `scheduled()` que já roda. A precisão do lembrete é a
+  frequência do Cron Trigger.
+- **Sem duplicar:** `alertado_em` é marcado antes do envio, numa atualização
+  condicionada a `alertado_em IS NULL`; se o envio falhar, a coluna volta a nulo
+  e o ciclo seguinte tenta de novo.
 
-Fuso: tudo é gravado em UTC (mesmo relógio do Worker e do `datetime('now')` do
-D1) e convertido para Brasília (UTC-3 fixo) só na entrada e na exibição.
+Fuso: `lembrar_em` e `alertado_em` ficam em horário de Brasília, como
+`agenda.data`, `agenda.hora_inicio` e `tarefas.vencimento` — o Worker roda em
+UTC, então essas colunas nunca devem ser comparadas com `datetime('now')`.
 
-Configuração — variáveis do Worker, nenhuma chave no repositório:
-`EVOLUTION_URL`, `EVOLUTION_INSTANCIA`, `EVOLUTION_APIKEY` (secret) e
-`ALARME_DESTINO` (número de destino com DDI).
+Código de referência: [`snippets/lembrete-whatsapp.js`](./snippets/lembrete-whatsapp.js).
+Como todo o resto deste repositório, **não é deployado daqui**.
 
-Código de referência: [`snippets/alarme-whatsapp.js`](./snippets/alarme-whatsapp.js).
-Como todo o resto deste repositório, **não é deployado daqui** — precisa ser
-colado no `worker.js` publicado no painel da Cloudflare.
+## Divergências entre esta documentação e o worker publicado
+
+Conferido no worker `crm-thiago-leads-worker` em 07/09/2026. Registrado aqui
+porque a documentação antiga levava a decisões técnicas erradas.
+
+- **WhatsApp é Green API, não Evolution API.** O worker usa
+  `https://api.green-api.com/waInstance...`, com as credenciais em `integracoes`
+  e webhook próprio em `/webhook/green-api`. As funções são `enviarWhatsapp()` e
+  `enviarWhatsappComMidia()`.
+- **A assistente no worker se chama "Ana Paula"**, com prompt próprio e histórico
+  na tabela `ana_paula_conversas`, ativada por `ativarAnaPaula()` a cada lead com
+  telefone. Se a "Fernanda" (Evolution + n8n) ainda existir, é fora da Cloudflare.
+- **O banco tem bem mais tabelas do que as listadas acima** — locação
+  (`contratos_locacao`, `cobrancas_locacao`, `chamados_manutencao`, `reajustes_log`),
+  disparos, campanhas, propostas, metas, simulações, avaliações, pós-venda,
+  lançamentos, auditoria e backups com prefixo `_bkp_`.
+- **`scheduled()` já existe** e roda três tarefas: sincronização de leads da Meta,
+  processamento de disparos em andamento e sincronização do Apify.
+- **`getAuth()` aceita `X-Automation-Key`** além do JWT, que é como o n8n chama a
+  API sem login.
 
 ## Automação de posts no Google Meu Negócio
 
