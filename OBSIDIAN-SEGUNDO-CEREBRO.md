@@ -83,14 +83,19 @@ Você ainda não usa Obsidian. Passo a passo:
 
    No Windows (PowerShell): `setx OBSIDIAN_VAULT_PATH "C:\Users\SeuUsuario\SegundoCerebro"`.
 
-4. Abra o Claude Code dentro da pasta do cofre e rode:
+4. Copie o modelo de [MODELO-COFRE-CLAUDE.md](./MODELO-COFRE-CLAUDE.md) para
+   um arquivo `_CLAUDE.md` na raiz do cofre. Ele já vem com o mapa de pastas
+   da sua operação, o funil do CRM e as regras de LGPD.
+
+5. Abra o Claude Code dentro da pasta do cofre e rode:
 
    ```
    /obsidian-init
    ```
 
-   Esse comando varre o cofre e gera o `_CLAUDE.md` (manual de operação do
-   cofre), o `index.md` (catálogo de notas) e a pasta `Logs/`.
+   Esse comando varre o cofre e completa o `_CLAUDE.md`, o `index.md`
+   (catálogo de notas) e a pasta `Logs/`. Rodando depois do passo 4, ele
+   respeita o mapa de pastas que você já colocou em vez de inventar o dele.
 
 ## Estrutura sugerida para corretor
 
@@ -112,8 +117,8 @@ bate com elas:
 | `Reviews/` | Fechamento de semana e de mês |
 
 `Imoveis/` é pasta sua, não é padrão da skill. Para ela funcionar, o Folder Map
-do `_CLAUDE.md` precisa citá-la explicitamente — peça isso ao Claude quando
-rodar o `/obsidian-init`, ou edite a tabela depois.
+do `_CLAUDE.md` precisa citá-la explicitamente — o modelo em
+[MODELO-COFRE-CLAUDE.md](./MODELO-COFRE-CLAUDE.md) já faz isso.
 
 ## Comandos que valem no dia a dia
 
