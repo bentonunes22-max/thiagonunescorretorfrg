@@ -47,6 +47,10 @@ Para usar, defina a variável de ambiente `SCRAPEGRAPH_API_KEY` com sua chave da
 
 O arquivo [CLAUDE.md](./CLAUDE.md) na raiz reúne as instruções permanentes de trabalho para o Claude Code neste repositório: idioma, cuidados com dados de leads e chaves de API, e as convenções de commit e PR.
 
+Em `.claude/skills/obsidian-second-brain/` está a skill **obsidian-second-brain** ([eugeniughelbur/obsidian-second-brain](https://github.com/eugeniughelbur/obsidian-second-brain), MIT, v0.15.0), que faz o Claude operar um cofre do Obsidian como memória de trabalho — lendo e escrevendo as notas sozinho, para não ser preciso reexplicar leads, imóveis, decisões e campanhas a cada conversa. São 47 comandos de barra (captura, notas de pessoa, projetos, kanban, busca, revisões semanais). Ficaram de fora da cópia o `media/`, o `docs/`, o `_includes/` e o `.github/` do projeto original, que não afetam o funcionamento.
+
+Como instalar na sua máquina para valer em todos os projetos, como criar o cofre do zero e quais cuidados de LGPD e de chaves de API valem aqui: ver [OBSIDIAN-SEGUNDO-CEREBRO.md](./OBSIDIAN-SEGUNDO-CEREBRO.md). O manual do cofre já preenchido com a operação (pastas, funil do CRM, tipos de nota) está em [MODELO-COFRE-CLAUDE.md](./MODELO-COFRE-CLAUDE.md).
+
 Também está incluída em `.claude/skills/humanizer/` a skill **humanizer** ([blader/humanizer](https://github.com/blader/humanizer), MIT), que reescreve texto com "cara de IA" para soar como escrito por uma pessoa, sem mudar o conteúdo. É útil para revisar mensagens geradas por IA antes de enviar a um lead ou cliente — por exemplo, respostas da recepcionista automatizada "Fernanda" no WhatsApp, textos de proposta ou de follow-up — removendo clichês, linguagem de vendas genérica e outros padrões típicos de texto gerado por IA.
 
 ## Próximos passos em aberto
