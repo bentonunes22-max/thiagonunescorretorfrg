@@ -4,6 +4,8 @@
 
 **Cloudflare Worker** (`crm-thiago-leads-worker`), publicado em `https://crm-thiago-leads-worker.bento-nunes22.workers.dev/`.
 
+Desde 14/09/2026 o código está versionado em [`worker/worker.js`](./worker/worker.js) e publicado por GitHub Actions — ver [DEPLOY.md](./DEPLOY.md). Antes disso ele existia apenas dentro do painel da Cloudflare.
+
 ### Rotas legadas (sincronização com o CRM HTML atual)
 - `POST /lead` — ingestão de leads (webhook WhatsApp/Meta Ads)
 - `POST /sync` — envio automático do estado local a cada `save()` no frontend
@@ -15,6 +17,17 @@
 - `GET /api/auth/login-test?email=X&senha=Y` — variante de teste via query string (contorna bloqueio de `fetch()` em pré-visualizações sandboxed)
 - CRUD genérico autenticado: `/api/leads`, `/api/imoveis`, `/api/clientes`
 - Autenticação aceita token tanto via header `Authorization` quanto via query string `?token=...`
+
+### Lembretes no WhatsApp
+- `POST /api/lembretes` — cria lembrete (aceita `quando` pronto ou `frase` em português)
+- `POST /api/lembretes/teste` — envia mensagem de teste
+- Despacho dentro do `scheduled()` que já existe, junto das outras tarefas do cron
+
+### Avisos e assistente dentro do CRM
+- `GET /api/avisos?desde=<ISO>` — leads novos, lembretes disparados e compromissos avisados. Só leitura
+- `GET /api/assistente` — histórico da conversa + resumo do dia (montado em SQL, sem IA)
+- `POST /api/assistente/mensagem` — conversa com a Ana Paula interna
+- `POST /api/assistente/limpar` — esquece o histórico
 
 ### Fotos (R2)
 - Bucket: `crm-thiago-fotos-imoveis`
@@ -40,8 +53,139 @@ Tabelas:
 - `crm_state` (blob de estado geral, usado pelo sync legado)
 - `apify_leads` / `apify_sync_log` — de um robô separado de scraping de concorrentes em portais (não relacionado ao fluxo de leads do CRM)
 - `instagram_posts` — fila de posts automáticos no Instagram por imóvel (`imovel_id`, `foto_url`, `legenda`, `status`), ainda sem uso registrado
+- `agenda`, `tarefas`, `follow_ups` — compromissos, pendências e retornos, todos com CRUD em `/api/...`. As colunas `lembrar_em` e `alertado_em` (ver [`sql/2026-09-lembretes.sql`](./sql/2026-09-lembretes.sql)) controlam o aviso no WhatsApp
+- `ana_paula_conversas` — conversas da assistente com LEADS, pelo WhatsApp
+- `assistente_conversa` — conversa da assistente com o THIAGO, dentro do CRM (ver [`sql/2026-09-assistente.sql`](./sql/2026-09-assistente.sql)). Tabela separada de propósito: prompt, interlocutor e ciclo de vida diferentes
+- `integracoes` — credenciais em banco, lidas por `lerIntegracao()`: `green_api_id_instance`, `green_api_token_instance`, `alerta_whatsapp_telefone`, chaves da Meta, `openai_api_key` e dados de PIX
 
 `imoveis.gmb_postado_em` — coluna de controle usada pela automação de Google Meu Negócio (ver abaixo), marca quando o imóvel já foi postado para evitar duplicidade.
+
+## Alerta de lead novo (já em produção)
+
+`registrarLeadEntrante()` é o caminho único de entrada de lead — site, webhook e
+sincronização com a Meta passam todos por ela — e sempre chama
+`enviarAlertaLead()`, que manda no WhatsApp do Thiago nome, telefone, e-mail,
+interesse e origem. O destino é a chave `alerta_whatsapp_telefone` da tabela
+`integracoes`; se ela estiver vazia, a função sai em silêncio, sem erro.
+
+## Lembretes no WhatsApp
+
+Complementa o alerta de lead: avisa o Thiago dos compromissos e pendências que
+ele já cadastra no CRM, em vez de criar uma agenda paralela.
+
+- **De onde sai o lembrete:** das tabelas que já existem — `tarefas` (pendência,
+  com `lembrar_em`) e `agenda` (compromisso; sem `lembrar_em`, avisa 1h antes de
+  `data` + `hora_inicio`). Duas colunas novas em cada uma: `lembrar_em` (quando
+  avisar) e `alertado_em` (quando o aviso saiu), no mesmo padrão de
+  `imoveis.gmb_postado_em`.
+- **Como se cria:** pelo CRUD que já existe, ou por `POST /api/lembretes` com
+  frase solta — `{"frase": "me lembra amanhã 9h de ligar pro proprietário"}` —
+  interpretada por `interpretarLembrete()`, que entende "hoje", "amanhã",
+  "sexta", "12/09", "14:30", "9h" e "em 40 minutos".
+- **Como sai:** pela `enviarWhatsapp()` que já existe (Green API), para o número
+  de `alerta_whatsapp_telefone`. Nenhuma credencial nova.
+- **Quando sai:** no `scheduled()` que já roda. A precisão do lembrete é a
+  frequência do Cron Trigger.
+- **Sem duplicar:** `alertado_em` é marcado antes do envio, numa atualização
+  condicionada a `alertado_em IS NULL`; se o envio falhar, a coluna volta a nulo
+  e o ciclo seguinte tenta de novo.
+
+Fuso: `lembrar_em` e `alertado_em` ficam em horário de Brasília, como
+`agenda.data`, `agenda.hora_inicio` e `tarefas.vencimento` — o Worker roda em
+UTC, então essas colunas nunca devem ser comparadas com `datetime('now')`.
+
+Código de referência: [`snippets/lembrete-whatsapp.js`](./snippets/lembrete-whatsapp.js).
+Como todo o resto deste repositório, **não é deployado daqui**.
+
+## Chat da Ana Paula dentro do CRM
+
+Duas Ana Paulas, com o mesmo nome e nada mais em comum: a do WhatsApp **qualifica
+lead** (prompt `ANA_PAULA_SISTEMA`, histórico em `ana_paula_conversas`); a do CRM
+**cobra o Thiago** (histórico em `assistente_conversa`). Só a segunda é descrita
+aqui.
+
+### O que ela acompanha
+
+`montarPanorama()` monta em SQL, sem IA:
+
+- **leads parados** — `estagio` fora de Fechado/Perdido e `atualizado_em` com mais
+  de 7 dias;
+- **follow-ups vencidos** — `follow_ups.proximo_contato` no passado, status Ativo;
+- **agenda** — compromissos de hoje e amanhã;
+- **tarefas vencidas** — pendentes com `vencimento` no passado.
+
+Lead parado não é tudo igual, então há um score: `estágio × 10 + temperatura × 5 +
+dias/3`. Proposta enviada esfriando há 9 dias vem antes de lead novo frio de 42 —
+ordena por onde há dinheiro mais perto de fechar, não por quem está parado há mais
+tempo. Mostra os 5 primeiros e diz quantos ficaram de fora.
+
+### Onde a IA entra (e onde não entra)
+
+- **O resumo do dia não passa pela IA.** É texto montado em código a partir do
+  panorama: de graça, instantâneo, e não inventa nome de cliente. Entregue uma vez
+  por dia — reabrir o CRM cinco vezes não repete a cobrança (controle em
+  `assistente_conversa.resumo_em`).
+- **"Me lembra amanhã 9h de ..." também não.** Cai no `interpretarLembrete()` que
+  já existe e vira tarefa na hora. Funciona mesmo com a OpenAI fora do ar.
+- **A IA entra só quando o Thiago escreve outra coisa**, via `chamarOpenAI()`
+  (gpt-4o-mini, chave em `integracoes`), com o panorama do dia no prompt de
+  sistema para ela responder com dado real. Se a OpenAI falhar, ela ainda entrega
+  a lista do que está atrasado.
+
+### Na tela
+
+O bloco de HTML/CSS/JS (`snippets/chat-ana-paula-crm.html`) desenha uma conversa
+única: os avisos de `/api/avisos` entram como cartões dela na linha do tempo, as
+respostas como balões, e o Thiago escreve embaixo. Botão flutuante com contador,
+som curto, notificação do sistema, sugestões rápidas ("o que tenho hoje?",
+"leads parados") e link `wa.me` direto no aviso de lead novo.
+
+Código: [`snippets/assistente-ana-paula-worker.js`](./snippets/assistente-ana-paula-worker.js),
+[`snippets/painel-avisos-worker.js`](./snippets/painel-avisos-worker.js) e
+[`snippets/chat-ana-paula-crm.html`](./snippets/chat-ana-paula-crm.html).
+
+## Divergências entre esta documentação e o worker publicado
+
+Conferido no worker `crm-thiago-leads-worker` em 07/09/2026. Registrado aqui
+porque a documentação antiga levava a decisões técnicas erradas.
+
+- **WhatsApp é Green API, não Evolution API.** O worker usa
+  `https://api.green-api.com/waInstance...`, com as credenciais em `integracoes`
+  e webhook próprio em `/webhook/green-api`. As funções são `enviarWhatsapp()` e
+  `enviarWhatsappComMidia()`.
+- **A assistente no worker se chama "Ana Paula"**, com prompt próprio e histórico
+  na tabela `ana_paula_conversas`, ativada por `ativarAnaPaula()` a cada lead com
+  telefone. Se a "Fernanda" (Evolution + n8n) ainda existir, é fora da Cloudflare.
+- **O banco tem bem mais tabelas do que as listadas acima** — locação
+  (`contratos_locacao`, `cobrancas_locacao`, `chamados_manutencao`, `reajustes_log`),
+  disparos, campanhas, propostas, metas, simulações, avaliações, pós-venda,
+  lançamentos, auditoria e backups com prefixo `_bkp_`.
+- **`scheduled()` já existe** e roda três tarefas: sincronização de leads da Meta,
+  processamento de disparos em andamento e sincronização do Apify.
+- **`getAuth()` aceita `X-Automation-Key`** além do JWT, que é como o n8n chama a
+  API sem login.
+
+## Automações dentro do Worker (conferidas em 14/09/2026)
+
+Tudo abaixo roda no `scheduled()`, disparado pelo cron de 10 em 10 minutos:
+
+- `sincronizarLeadsMeta()` — puxa leads dos formulários da Meta; registra cada
+  execução em `meta_sync_log` (`executado_em`, `sucesso`, `novos`, `http_status`, `erro`)
+- `executarBackupAutomatico()` — backup periódico (as tabelas `_bkp_*`)
+- `marcarLeadsPerdidosAutomaticamente()` — varredura que move lead parado para Perdido
+- `renovarTokenMetaAutomatico()` — renova o token da Meta antes de expirar
+- `processarFollowUpsAutomaticos()` — cria e envia follow-up sozinho
+  (`criarFollowUpAutomatico`, `enviarFollowUpAutomatico`)
+- processamento de `disparos` em andamento e de `apify_sync_log`
+
+E por HTTP:
+
+- `POST /api/chat-crm` — chat do assistente do CRM, limitado a 20 mensagens por
+  minuto (`limitarTaxa`). Monta o contexto com agenda de hoje, follow-ups
+  vencidos, leads quentes parados, resumo do funil e tarefas vencidas; histórico
+  em `chat_assistente_mensagens` (`remetente` = user/assistente)
+- `GET /api/chat-crm/historico` — últimas mensagens
+- `GET /api/saude-automacao` — diagnóstico das automações
 
 ## Automação de posts no Google Meu Negócio
 

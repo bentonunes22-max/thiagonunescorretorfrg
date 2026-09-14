@@ -1,0 +1,64 @@
+name: Deploy do Worker
+
+# Publica o Worker do CRM quando o código entra na main.
+#
+# Em pull request, só valida (não publica): assim um erro de sintaxe aparece
+# antes do merge, e não em produção.
+#
+# Configurar uma vez, em Settings > Secrets and variables > Actions:
+#   CLOUDFLARE_API_TOKEN   token com permissão "Workers Scripts: Edit"
+#   CLOUDFLARE_ACCOUNT_ID  id da conta (aparece na barra lateral do dashboard)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'worker/**'
+      - 'wrangler.toml'
+      - '.github/workflows/deploy-worker.yml'
+  pull_request:
+    paths:
+      - 'worker/**'
+      - 'wrangler.toml'
+      - '.github/workflows/deploy-worker.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validar:
+    name: Validar sem publicar
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Conferir sintaxe do worker.js
+        run: node --check worker/worker.js
+
+      - name: Montar o bundle sem enviar
+        uses: cloudflare/wrangler-action@v3
+        with:
+          wranglerVersion: '3.114.1'
+          command: deploy --dry-run --outdir /tmp/build
+
+  publicar:
+    name: Publicar na Cloudflare
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Conferir sintaxe do worker.js
+        run: node --check worker/worker.js
+
+      # --keep-vars preserva as variáveis criadas pelo painel: sem ele, um
+      # deploy pode apagar variável que não esteja declarada no wrangler.toml.
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '3.114.1'
+          command: deploy --keep-vars

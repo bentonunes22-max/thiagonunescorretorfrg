@@ -1,0 +1,519 @@
+<!-- ==========================================================================
+     ⚠️ CONFERIR ANTES DE COLAR (14/09/2026)
+
+     O Worker publicado já tem `POST /api/chat-crm` e `GET /api/chat-crm/historico`,
+     criados depois deste arquivo. Se for usar o chat que já está em produção —
+     o mais provável —, troque no <script> abaixo:
+
+        /api/assistente          →  /api/chat-crm/historico   (carregar)
+        /api/assistente/mensagem →  /api/chat-crm             (enviar)
+
+     e ajuste o corpo do POST: a rota de produção espera { mensagem: "..." },
+     não { texto: "..." }. O resto do painel (avisos, contador, som) funciona
+     igual, porque depende só de /api/avisos.
+     ==========================================================================
+
+     Chat da Ana Paula dentro do CRM — cole este bloco antes de </body>
+     no HTML do CRM. Sem biblioteca nenhuma.
+
+     Do outro lado, o Worker precisa de:
+       GET  /api/avisos               (snippets/painel-avisos-worker.js)
+       GET  /api/assistente           (snippets/assistente-ana-paula-worker.js)
+       POST /api/assistente/mensagem
+
+     Ajuste API e CHAVES_TOKEN logo no começo do <script> se precisar.
+     ========================================================================== -->
+
+<style>
+  #crmav-raiz {
+    --crmav-acento: #128c7e;        /* troque pela cor do CRM */
+    --crmav-fundo: #ffffff;
+    --crmav-fundo-2: #f6f7f9;
+    --crmav-borda: #e3e6ea;
+    --crmav-texto: #1c1f23;
+    --crmav-texto-fraco: #6b7280;
+    --crmav-alerta: #e11d48;
+    position: fixed; inset: 0; pointer-events: none; z-index: 2147483000;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  #crmav-raiz * { box-sizing: border-box; }
+
+  /* --- botão flutuante --- */
+  #crmav-botao {
+    pointer-events: auto;
+    position: absolute; right: 20px; bottom: 20px;
+    width: 56px; height: 56px; border-radius: 50%;
+    border: none; cursor: pointer;
+    background: var(--crmav-acento); color: #fff; font-size: 22px; line-height: 1;
+    box-shadow: 0 6px 20px rgba(0,0,0,.22);
+    transition: transform .15s ease, opacity .15s ease;
+  }
+  #crmav-botao:hover { transform: scale(1.06); }
+  #crmav-botao.crmav-escondido { opacity: 0; pointer-events: none; transform: scale(.8); }
+  #crmav-badge {
+    position: absolute; top: -4px; right: -4px;
+    min-width: 22px; height: 22px; padding: 0 6px;
+    border-radius: 11px; background: var(--crmav-alerta); color: #fff;
+    font-size: 12px; font-weight: 700; line-height: 22px; text-align: center;
+    box-shadow: 0 0 0 2px #fff;
+  }
+  #crmav-badge[hidden] { display: none; }
+
+  /* --- painel --- */
+  #crmav-painel {
+    pointer-events: auto;
+    position: absolute; top: 0; right: 0; bottom: 0;
+    width: 400px; max-width: 100vw;
+    background: var(--crmav-fundo); color: var(--crmav-texto);
+    border-left: 1px solid var(--crmav-borda);
+    box-shadow: -8px 0 30px rgba(0,0,0,.12);
+    display: flex; flex-direction: column;
+    transform: translateX(100%); transition: transform .22s ease;
+  }
+  #crmav-painel.crmav-aberto { transform: translateX(0); }
+
+  #crmav-cabecalho {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; border-bottom: 1px solid var(--crmav-borda);
+  }
+  #crmav-retrato {
+    width: 38px; height: 38px; border-radius: 50%; flex: none;
+    background: var(--crmav-acento); color: #fff;
+    display: grid; place-items: center; font-weight: 600; font-size: 14px;
+  }
+  #crmav-quem { flex: 1; min-width: 0; }
+  #crmav-quem h2 { margin: 0; font-size: 15px; font-weight: 600; }
+  #crmav-quem p { margin: 0; font-size: 12px; color: var(--crmav-texto-fraco); }
+  .crmav-icone-botao {
+    border: none; background: transparent; cursor: pointer; padding: 6px;
+    border-radius: 6px; color: var(--crmav-texto-fraco); font-size: 15px; line-height: 1;
+  }
+  .crmav-icone-botao:hover { background: var(--crmav-fundo-2); color: var(--crmav-texto); }
+
+  /* --- conversa --- */
+  #crmav-conversa {
+    flex: 1; overflow-y: auto; padding: 16px 14px;
+    display: flex; flex-direction: column; gap: 10px;
+    background: var(--crmav-fundo-2);
+  }
+  .crmav-balao {
+    max-width: 86%; padding: 9px 12px; border-radius: 14px;
+    font-size: 13.5px; line-height: 1.45; white-space: pre-wrap; word-wrap: break-word;
+  }
+  .crmav-de-ana {
+    align-self: flex-start; background: #fff; border: 1px solid var(--crmav-borda);
+    border-bottom-left-radius: 4px;
+  }
+  .crmav-de-thiago {
+    align-self: flex-end; background: var(--crmav-acento); color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+  .crmav-aviso { align-self: flex-start; background: #fff; border-left: 3px solid var(--crmav-acento); }
+  .crmav-aviso.crmav-novo { background: #f0fdf9; }
+  .crmav-aviso-titulo { font-weight: 600; }
+  .crmav-aviso-link {
+    display: inline-block; margin-top: 4px; font-size: 12px;
+    color: var(--crmav-acento); text-decoration: none; font-weight: 600;
+  }
+  .crmav-aviso-link:hover { text-decoration: underline; }
+  .crmav-hora { font-size: 10.5px; color: var(--crmav-texto-fraco); margin-top: 3px; }
+  .crmav-de-thiago .crmav-hora { color: rgba(255,255,255,.75); text-align: right; }
+
+  #crmav-digitando { align-self: flex-start; display: flex; gap: 4px; padding: 10px 14px; }
+  #crmav-digitando span {
+    width: 6px; height: 6px; border-radius: 50%; background: #9aa3ae;
+    animation: crmav-pulo 1.2s infinite;
+  }
+  #crmav-digitando span:nth-child(2) { animation-delay: .15s; }
+  #crmav-digitando span:nth-child(3) { animation-delay: .3s; }
+  @keyframes crmav-pulo { 0%,60%,100% { opacity:.3; transform: translateY(0) } 30% { opacity:1; transform: translateY(-3px) } }
+
+  /* --- sugestões --- */
+  #crmav-sugestoes {
+    display: flex; gap: 6px; padding: 8px 12px 0; flex-wrap: wrap;
+    border-top: 1px solid var(--crmav-borda);
+  }
+  #crmav-sugestoes button {
+    border: 1px solid var(--crmav-borda); background: var(--crmav-fundo);
+    border-radius: 14px; padding: 5px 11px; cursor: pointer;
+    font-size: 12px; color: var(--crmav-texto);
+  }
+  #crmav-sugestoes button:hover { background: var(--crmav-fundo-2); }
+
+  /* --- escrever --- */
+  #crmav-escrever { display: flex; gap: 8px; padding: 10px 12px; align-items: flex-end; }
+  #crmav-texto {
+    flex: 1; resize: none; border: 1px solid var(--crmav-borda); border-radius: 18px;
+    padding: 9px 13px; font: inherit; font-size: 13.5px; max-height: 96px;
+    font-family: inherit; color: var(--crmav-texto); background: var(--crmav-fundo);
+  }
+  #crmav-texto:focus { outline: 2px solid var(--crmav-acento); outline-offset: -1px; }
+  #crmav-enviar {
+    border: none; background: var(--crmav-acento); color: #fff; cursor: pointer;
+    width: 38px; height: 38px; border-radius: 50%; font-size: 16px; flex: none;
+  }
+  #crmav-enviar:disabled { opacity: .45; cursor: default; }
+  #crmav-status { padding: 0 14px 8px; font-size: 11px; color: var(--crmav-texto-fraco); }
+
+  @media (max-width: 480px) { #crmav-painel { width: 100vw; border-left: none; } }
+</style>
+
+<div id="crmav-raiz">
+  <button id="crmav-botao" type="button" aria-label="Abrir conversa com a Ana Paula">
+    💬<span id="crmav-badge" hidden>0</span>
+  </button>
+
+  <aside id="crmav-painel" role="dialog" aria-label="Conversa com a Ana Paula">
+    <div id="crmav-cabecalho">
+      <div id="crmav-retrato" aria-hidden="true">AP</div>
+      <div id="crmav-quem">
+        <h2>Ana Paula</h2>
+        <p id="crmav-subtitulo">assistente do CRM</p>
+      </div>
+      <button class="crmav-icone-botao" id="crmav-som" type="button" title="Ligar/desligar som">🔊</button>
+      <button class="crmav-icone-botao" id="crmav-fechar" type="button" aria-label="Fechar">✕</button>
+    </div>
+
+    <div id="crmav-conversa" aria-live="polite"></div>
+
+    <div id="crmav-sugestoes">
+      <button type="button" data-frase="O que tenho pra hoje?">O que tenho hoje?</button>
+      <button type="button" data-frase="Quais leads estão parados?">Leads parados</button>
+      <button type="button" data-frase="Quem eu devia ligar primeiro?">Ligar primeiro</button>
+    </div>
+
+    <div id="crmav-escrever">
+      <textarea id="crmav-texto" rows="1" placeholder="Escreva pra Ana Paula…"></textarea>
+      <button id="crmav-enviar" type="button" aria-label="Enviar">➤</button>
+    </div>
+    <div id="crmav-status">—</div>
+  </aside>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---- Configuração -------------------------------------------------------
+  var API = 'https://crm-thiago-leads-worker.bento-nunes22.workers.dev';
+  // O CRM do Thiago guarda em "crmToken". Os outros nomes ficam como rede de
+  // segurança, e se nenhum bater o painel procura pelo formato do JWT.
+  var CHAVES_TOKEN = ['crmToken', 'crm_token', 'crm token', 'token', 'jwt', 'authToken'];
+  var INTERVALO_MS = 45000;
+  var JANELA_H = 24;
+
+  // ---- Estado -------------------------------------------------------------
+  var linha = [];        // timeline única: conversa + avisos, ordenada por `em`
+  var idsAvisos = {};    // para não repetir aviso já mostrado
+  var vistoEm = localStorage.getItem('crmav_visto_em') || '1970-01-01T00:00:00Z';
+  var somLigado = localStorage.getItem('crmav_som') !== 'off';
+  var aberto = false, carregou = false, enviando = false;
+
+  var el = {};
+  ['botao','badge','painel','conversa','fechar','som','texto','enviar','status','subtitulo','sugestoes']
+    .forEach(function (n) { el[n] = document.getElementById('crmav-' + n); });
+
+  /** JWT é "cabeçalho.corpo.assinatura" — dá para reconhecer sem saber o nome. */
+  function pareceJWT(valor) {
+    return typeof valor === 'string' && /^[\w-]+\.[\w-]+\.[\w-]+$/.test(valor.trim());
+  }
+
+  /** Aceita a string crua, com aspas, ou um objeto de sessão com o token dentro. */
+  function extrair(bruto) {
+    if (!bruto) return null;
+    var v = String(bruto).trim().replace(/^"|"$/g, '');
+    if (pareceJWT(v)) return v;
+    if (v.charAt(0) !== '{') return null;
+    try {
+      var obj = JSON.parse(v);
+      var campos = ['token', 'jwt', 'access_token', 'accessToken', 'crmToken'];
+      for (var i = 0; i < campos.length; i++) {
+        if (pareceJWT(obj[campos[i]])) return String(obj[campos[i]]).trim();
+      }
+    } catch (e) { /* não era JSON */ }
+    return null;
+  }
+
+  function pegarToken() {
+    // 1) os nomes conhecidos, na ordem
+    for (var i = 0; i < CHAVES_TOKEN.length; i++) {
+      var achado = extrair(localStorage.getItem(CHAVES_TOKEN[i]));
+      if (achado) return achado;
+    }
+    // 2) qualquer chave guardando algo com cara de JWT — se o CRM mudar o nome
+    //    do campo um dia, o chat continua funcionando sozinho
+    try {
+      for (var j = 0; j < localStorage.length; j++) {
+        var achado2 = extrair(localStorage.getItem(localStorage.key(j)));
+        if (achado2) return achado2;
+      }
+    } catch (e) { /* navegador bloqueando storage */ }
+    return null;
+  }
+
+  function chamar(caminho, opcoes) {
+    var token = pegarToken();
+    if (!token) return Promise.reject(new Error('faça login no CRM'));
+    opcoes = opcoes || {};
+    opcoes.headers = Object.assign({ Authorization: 'Bearer ' + token }, opcoes.headers || {});
+    return fetch(API + caminho, opcoes).then(function (r) {
+      if (r.status === 401) throw new Error('sessão expirada');
+      if (!r.ok) throw new Error('servidor ' + r.status);
+      return r.json();
+    });
+  }
+
+  // ---- Carga inicial: histórico + resumo do dia ---------------------------
+  function carregarConversa() {
+    return chamar('/api/assistente').then(function (d) {
+      (d.mensagens || []).forEach(function (m) {
+        adicionar({
+          de: m.papel === 'thiago' ? 'thiago' : 'ana',
+          texto: m.texto,
+          em: m.em,
+          chave: 'msg-' + m.em + '-' + m.papel,
+        }, true);
+      });
+      carregou = true;
+      if (d.resumoNovo && !aberto) { tocar(); }
+      desenhar();
+    });
+  }
+
+  // ---- Avisos (leads, lembretes, agenda) ---------------------------------
+  function buscarAvisos() {
+    var desde = new Date(Date.now() - JANELA_H * 3600000).toISOString();
+    return chamar('/api/avisos?desde=' + encodeURIComponent(desde)).then(function (d) {
+      var novos = 0;
+      (d.avisos || []).forEach(function (a) {
+        if (idsAvisos[a.id]) return;
+        idsAvisos[a.id] = true;
+        adicionar({ de: 'ana', tipo: 'aviso', aviso: a, texto: a.titulo, em: a.quando, chave: a.id }, true);
+        if (a.quando > vistoEm) novos++;
+      });
+      if (novos && !aberto) { tocar(); notificar(); }
+      desenhar();
+      mostrarStatus('atualizado ' + horaCurta(new Date()));
+    });
+  }
+
+  function adicionar(item, semDesenhar) {
+    if (linha.some(function (x) { return x.chave === item.chave; })) return;
+    linha.push(item);
+    linha.sort(function (a, b) { return (a.em || '') < (b.em || '') ? -1 : 1; });
+    if (!semDesenhar) desenhar();
+  }
+
+  // ---- Desenho ------------------------------------------------------------
+  var ICONES = { lead: '🔔', lembrete: '⏰', agenda: '📅' };
+
+  function desenhar() {
+    var naoLidos = aberto ? 0 : linha.filter(function (i) {
+      return i.de === 'ana' && i.em > vistoEm;
+    }).length;
+    el.badge.textContent = naoLidos > 99 ? '99+' : String(naoLidos);
+    el.badge.hidden = naoLidos === 0;
+
+    var perto = el.conversa.scrollHeight - el.conversa.scrollTop - el.conversa.clientHeight < 80;
+    el.conversa.innerHTML = '';
+
+    if (!linha.length) {
+      var vazio = document.createElement('div');
+      vazio.className = 'crmav-balao crmav-de-ana';
+      vazio.textContent = carregou ? 'Tudo em dia por aqui. Se precisar, é só chamar.' : 'Carregando…';
+      el.conversa.appendChild(vazio);
+    }
+
+    linha.forEach(function (item) {
+      el.conversa.appendChild(item.tipo === 'aviso' ? baloAviso(item) : balaoTexto(item));
+    });
+
+    if (enviando) el.conversa.appendChild(digitando());
+    if (perto || enviando) el.conversa.scrollTop = el.conversa.scrollHeight;
+  }
+
+  function balaoTexto(item) {
+    var b = document.createElement('div');
+    b.className = 'crmav-balao ' + (item.de === 'thiago' ? 'crmav-de-thiago' : 'crmav-de-ana');
+    b.textContent = item.texto;                       // textContent: nada vira HTML
+    var h = document.createElement('div');
+    h.className = 'crmav-hora';
+    h.textContent = horaCurta(new Date(item.em));
+    b.appendChild(h);
+    return b;
+  }
+
+  function baloAviso(item) {
+    var a = item.aviso;
+    var b = document.createElement('div');
+    b.className = 'crmav-balao crmav-aviso' + (item.em > vistoEm ? ' crmav-novo' : '');
+
+    var t = document.createElement('div');
+    t.className = 'crmav-aviso-titulo';
+    t.textContent = (ICONES[a.tipo] || '•') + ' ' + a.titulo;
+    b.appendChild(t);
+
+    if (a.detalhe) {
+      var d = document.createElement('div');
+      d.textContent = a.detalhe;
+      b.appendChild(d);
+    }
+    if (a.link) {
+      var l = document.createElement('a');
+      l.className = 'crmav-aviso-link';
+      l.href = a.link; l.target = '_blank'; l.rel = 'noopener';
+      l.textContent = 'abrir conversa no WhatsApp →';
+      b.appendChild(l);
+    }
+    var h = document.createElement('div');
+    h.className = 'crmav-hora';
+    h.textContent = horaCurta(new Date(item.em));
+    b.appendChild(h);
+    return b;
+  }
+
+  function digitando() {
+    var d = document.createElement('div');
+    d.id = 'crmav-digitando';
+    d.innerHTML = '<span></span><span></span><span></span>';
+    return d;
+  }
+
+  function mostrarStatus(t) { el.status.textContent = t; }
+  function horaCurta(d) {
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+
+  // ---- Enviar -------------------------------------------------------------
+  function enviar() {
+    var texto = el.texto.value.trim();
+    if (!texto || enviando) return;
+
+    el.texto.value = '';
+    el.texto.style.height = 'auto';
+    adicionar({ de: 'thiago', texto: texto, em: new Date().toISOString(), chave: 'eu-' + Date.now() });
+
+    enviando = true;
+    el.enviar.disabled = true;
+    el.subtitulo.textContent = 'pensando…';
+    desenhar();
+
+    chamar('/api/assistente/mensagem', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texto: texto }),
+    })
+      .then(function (d) {
+        adicionar({ de: 'ana', texto: d.resposta || '...', em: new Date().toISOString(), chave: 'ana-' + Date.now() });
+        // Se ela marcou lembrete, o aviso correspondente vem na próxima rodada.
+        if (/marquei/i.test(d.resposta || '')) setTimeout(buscarAvisos, 1500);
+      })
+      .catch(function (erro) {
+        adicionar({ de: 'ana', texto: 'Não consegui responder agora (' + erro.message + ').', em: new Date().toISOString(), chave: 'erro-' + Date.now() });
+      })
+      .then(function () {
+        enviando = false;
+        el.enviar.disabled = false;
+        el.subtitulo.textContent = 'assistente do CRM';
+        marcarVisto();
+        desenhar();
+      });
+  }
+
+  el.enviar.addEventListener('click', enviar);
+  el.texto.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); }
+  });
+  el.texto.addEventListener('input', function () {
+    el.texto.style.height = 'auto';
+    el.texto.style.height = Math.min(el.texto.scrollHeight, 96) + 'px';
+  });
+  el.sugestoes.addEventListener('click', function (e) {
+    var frase = e.target && e.target.getAttribute('data-frase');
+    if (!frase) return;
+    el.texto.value = frase;
+    enviar();
+  });
+
+  // ---- Som e notificação --------------------------------------------------
+  function tocar() {
+    if (!somLigado) return;
+    try {
+      var ctx = new (window.AudioContext || window.webkitAudioContext)();
+      var osc = ctx.createOscillator(), vol = ctx.createGain();
+      osc.frequency.value = 880;
+      vol.gain.setValueAtTime(0.0001, ctx.currentTime);
+      vol.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.01);
+      vol.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+      osc.connect(vol); vol.connect(ctx.destination);
+      osc.start(); osc.stop(ctx.currentTime + 0.36);
+      setTimeout(function () { ctx.close(); }, 600);
+    } catch (e) { /* navegador sem áudio liberado */ }
+  }
+
+  function notificar() {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    try {
+      var n = new Notification('Ana Paula', { body: 'Novidade no CRM', tag: 'crmav' });
+      n.onclick = function () { window.focus(); abrir(); n.close(); };
+    } catch (e) { /* alguns navegadores exigem service worker */ }
+  }
+
+  // ---- Abrir/fechar -------------------------------------------------------
+  function marcarVisto() {
+    vistoEm = new Date().toISOString();
+    localStorage.setItem('crmav_visto_em', vistoEm);
+  }
+
+  function abrir() {
+    aberto = true;
+    el.painel.classList.add('crmav-aberto');
+    el.botao.classList.add('crmav-escondido');
+    desenhar();
+    el.conversa.scrollTop = el.conversa.scrollHeight;
+    el.texto.focus();
+  }
+
+  function fechar() {
+    aberto = false;
+    el.painel.classList.remove('crmav-aberto');
+    el.botao.classList.remove('crmav-escondido');
+    marcarVisto();      // o destaque do que era novo só sai agora
+    desenhar();
+  }
+
+  el.botao.addEventListener('click', function () { aberto ? fechar() : abrir(); });
+  el.fechar.addEventListener('click', fechar);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && aberto && document.activeElement !== el.texto) fechar();
+  });
+
+  el.som.addEventListener('click', function () {
+    somLigado = !somLigado;
+    localStorage.setItem('crmav_som', somLigado ? 'on' : 'off');
+    el.som.textContent = somLigado ? '🔊' : '🔇';
+    if (somLigado) tocar();
+  });
+  el.som.textContent = somLigado ? '🔊' : '🔇';
+
+  if ('Notification' in window && Notification.permission === 'default') {
+    el.botao.addEventListener('click', function pedir() {
+      Notification.requestPermission();
+      el.botao.removeEventListener('click', pedir);
+    });
+  }
+
+  // ---- Ciclo --------------------------------------------------------------
+  function atualizar() {
+    if (document.hidden) return;
+    buscarAvisos().catch(function (e) { mostrarStatus(e.message); });
+  }
+
+  carregarConversa()
+    .then(buscarAvisos)
+    .catch(function (e) { carregou = true; mostrarStatus(e.message); desenhar(); });
+
+  setInterval(atualizar, INTERVALO_MS);
+  document.addEventListener('visibilitychange', atualizar);
+})();
+</script>
