@@ -24,6 +24,7 @@
 - Follow-up: textarea de mensagem, campo de próximo follow-up, histórico cronológico por lead
 
 ## Marcos de infraestrutura (paralelos às versões de interface)
+- **14/09/2026 — migração aplicada em produção:** colunas `lembrar_em` e `alertado_em` em `tarefas` e `agenda`, tabela `assistente_conversa` e os três índices, criados direto no D1 `crm-thiago-leads`. Falta aplicar o código no `worker.js` publicado e colar o chat no HTML do CRM
 - Lembretes no WhatsApp a partir da `agenda` e das `tarefas` (colunas `lembrar_em` e `alertado_em`), despachados pelo cron do Worker via Green API, com criação por frase em português ("amanhã 9h", "12/09 14:30", "em 40 minutos")
 - Documentação conferida contra o worker publicado: WhatsApp é Green API (não Evolution), assistente "Ana Paula" no próprio Worker, `scheduled()` já ativo e módulos de locação/financeiro no D1
 - Automação de post no Google Meu Negócio a cada imóvel novo cadastrado (via Zapier, rotina agendada do Claude Code) + coluna `imoveis.gmb_postado_em` no D1 para controle de duplicidade
