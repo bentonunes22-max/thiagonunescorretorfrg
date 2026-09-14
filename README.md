@@ -2,7 +2,9 @@
 
 CRM imobiliário próprio, construído sob medida para a operação autônoma de Thiago Nunes (CRECI-PR 50.265) em Fazenda Rio Grande/PR (@thiago_nunes_corretor).
 
-Este repositório existe apenas como **documentação e versionamento** do sistema — o CRM roda em produção 100% na Cloudflare (Worker + D1 + R2). Nada aqui precisa ser "deployado" a partir do GitHub; é o registro histórico/técnico do que já está no ar.
+Este repositório guarda a **documentação e o código do Worker** do CRM, que roda em produção 100% na Cloudflare (Worker + D1 + R2).
+
+Desde 14/09/2026 o `worker/worker.js` é publicado a partir daqui, por GitHub Actions: alteração vira PR, o PR é validado, e o merge na `main` publica (ver [DEPLOY.md](./DEPLOY.md)). O frontend do CRM (HTML/JS único) continua fora do repositório.
 
 ## Status atual
 

@@ -1,4 +1,20 @@
 /**
+ * ⚠️ OBSOLETO — NÃO COLAR NO WORKER (conferido em 14/09/2026)
+ * ===========================================================
+ *
+ * Entre 07/09 e 14/09 o Worker publicado ganhou `POST /api/chat-crm`, que faz o
+ * mesmo que este arquivo: monta o contexto do dia (agenda, follow-ups vencidos,
+ * leads quentes parados, funil, tarefas vencidas), conversa com o Thiago e
+ * guarda o histórico em `chat_assistente_mensagens`. Ainda tem limite de 20
+ * mensagens por minuto, que aqui não existe.
+ *
+ * Colar este arquivo criaria uma segunda rota de chat e um segundo histórico,
+ * competindo com o que já está no ar. Mantido só como registro do que foi
+ * proposto. A parte que continua valendo é o lembrete pontual
+ * (`snippets/lembrete-whatsapp.js`), que o Worker ainda não tem.
+ *
+ * ---------------------------------------------------------------------------
+ *
  * Ana Paula interna — a assistente que conversa com o Thiago dentro do CRM
  * =======================================================================
  *

@@ -4,6 +4,8 @@
 
 **Cloudflare Worker** (`crm-thiago-leads-worker`), publicado em `https://crm-thiago-leads-worker.bento-nunes22.workers.dev/`.
 
+Desde 14/09/2026 o código está versionado em [`worker/worker.js`](./worker/worker.js) e publicado por GitHub Actions — ver [DEPLOY.md](./DEPLOY.md). Antes disso ele existia apenas dentro do painel da Cloudflare.
+
 ### Rotas legadas (sincronização com o CRM HTML atual)
 - `POST /lead` — ingestão de leads (webhook WhatsApp/Meta Ads)
 - `POST /sync` — envio automático do estado local a cada `save()` no frontend
@@ -162,6 +164,28 @@ porque a documentação antiga levava a decisões técnicas erradas.
   processamento de disparos em andamento e sincronização do Apify.
 - **`getAuth()` aceita `X-Automation-Key`** além do JWT, que é como o n8n chama a
   API sem login.
+
+## Automações dentro do Worker (conferidas em 14/09/2026)
+
+Tudo abaixo roda no `scheduled()`, disparado pelo cron de 10 em 10 minutos:
+
+- `sincronizarLeadsMeta()` — puxa leads dos formulários da Meta; registra cada
+  execução em `meta_sync_log` (`executado_em`, `sucesso`, `novos`, `http_status`, `erro`)
+- `executarBackupAutomatico()` — backup periódico (as tabelas `_bkp_*`)
+- `marcarLeadsPerdidosAutomaticamente()` — varredura que move lead parado para Perdido
+- `renovarTokenMetaAutomatico()` — renova o token da Meta antes de expirar
+- `processarFollowUpsAutomaticos()` — cria e envia follow-up sozinho
+  (`criarFollowUpAutomatico`, `enviarFollowUpAutomatico`)
+- processamento de `disparos` em andamento e de `apify_sync_log`
+
+E por HTTP:
+
+- `POST /api/chat-crm` — chat do assistente do CRM, limitado a 20 mensagens por
+  minuto (`limitarTaxa`). Monta o contexto com agenda de hoje, follow-ups
+  vencidos, leads quentes parados, resumo do funil e tarefas vencidas; histórico
+  em `chat_assistente_mensagens` (`remetente` = user/assistente)
+- `GET /api/chat-crm/historico` — últimas mensagens
+- `GET /api/saude-automacao` — diagnóstico das automações
 
 ## Automação de posts no Google Meu Negócio
 

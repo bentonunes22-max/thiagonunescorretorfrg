@@ -1,0 +1,41 @@
+# Configuração de deploy do Worker do CRM.
+#
+# O código em worker/worker.js é exatamente o que está publicado hoje —
+# baixado da Cloudflare, sem nenhuma alteração. A partir daqui, mudança no
+# Worker passa por commit, PR e deploy automático (.github/workflows/deploy-worker.yml).
+#
+# O que NÃO é declarado aqui, de propósito:
+#   - secrets (JWT_SECRET, AUTOMATION_KEY, META_APP_SECRET, INTEGRACOES_KEY,
+#     APIFY_TOKEN, GREEN_API_WEBHOOK_SECRET, INSTAGRAM_WEBHOOK_VERIFY_TOKEN):
+#     ficam guardados no próprio Worker e não entram em repositório. O deploy
+#     não os toca.
+#   - credenciais da Green API, da OpenAI e da Meta: ficam na tabela
+#     `integracoes` do D1, lidas em tempo de execução por `lerIntegracao()`.
+
+name = "crm-thiago-leads-worker"
+main = "worker/worker.js"
+
+# CONFERIR no painel (Settings > Runtime) antes do primeiro deploy. Foi usada a
+# data de criação do Worker; se a que está lá for outra, troque aqui — mudar a
+# data de compatibilidade muda sutilmente o comportamento do runtime.
+compatibility_date = "2026-07-05"
+
+# Banco relacional do CRM.
+[[d1_databases]]
+binding = "DB"
+database_name = "crm-thiago-leads"
+database_id = "20c39ac4-6d59-41cc-b1dd-2e9e6e14dfa9"
+
+# Fotos de imóveis.
+[[r2_buckets]]
+binding = "fotos_balde"
+bucket_name = "crm-thiago-fotos-imoveis"
+
+# De 10 em 10 minutos — é a frequência que já roda hoje, confirmada pelos
+# registros de `meta_sync_log` (execuções em :00, :10, :20, :30, :40, :50).
+# Declarado explicitamente para o deploy não alterar o que já está no ar.
+# Esse mesmo cron é quem dispara: sincronização de leads da Meta, backup,
+# varredura de leads perdidos, renovação do token da Meta, follow-ups
+# automáticos, disparos em massa e sincronização do Apify.
+[triggers]
+crons = ["*/10 * * * *"]

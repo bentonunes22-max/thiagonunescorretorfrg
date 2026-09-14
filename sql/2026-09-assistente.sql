@@ -1,3 +1,9 @@
+-- ⚠️ APLICADO EM 14/09/2026, MAS PROVAVELMENTE DESNECESSÁRIO.
+-- O Worker publicado já guarda a conversa do assistente em
+-- `chat_assistente_mensagens`, criada depois deste arquivo. A tabela abaixo
+-- existe no banco e está vazia; se o chat de produção for o que vai ficar,
+-- ela pode ser removida com:  DROP TABLE assistente_conversa;
+--
 -- Chat da Ana Paula com o Thiago (assistente interno do CRM)
 -- Aplicar no D1 `crm-thiago-leads`.
 --

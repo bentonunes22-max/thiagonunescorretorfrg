@@ -24,6 +24,8 @@
 - Follow-up: textarea de mensagem, campo de próximo follow-up, histórico cronológico por lead
 
 ## Marcos de infraestrutura (paralelos às versões de interface)
+- **14/09/2026 — Worker versionado e publicação automática:** o `worker.js` que estava só no painel passou a viver em `worker/worker.js`, com `wrangler.toml` (bindings `DB` e `fotos_balde`, cron `*/10` confirmado pelos registros de `meta_sync_log`) e GitHub Actions que valida em PR e publica no merge para a `main`
+- **14/09/2026 — automações encontradas no Worker e até então não documentadas:** chat do assistente (`/api/chat-crm` + tabela `chat_assistente_mensagens`), follow-up automático, backup automático, varredura de leads perdidos, renovação do token da Meta, `meta_sync_log` e `/api/saude-automacao`
 - **14/09/2026 — migração aplicada em produção:** colunas `lembrar_em` e `alertado_em` em `tarefas` e `agenda`, tabela `assistente_conversa` e os três índices, criados direto no D1 `crm-thiago-leads`. Falta aplicar o código no `worker.js` publicado e colar o chat no HTML do CRM
 - Lembretes no WhatsApp a partir da `agenda` e das `tarefas` (colunas `lembrar_em` e `alertado_em`), despachados pelo cron do Worker via Green API, com criação por frase em português ("amanhã 9h", "12/09 14:30", "em 40 minutos")
 - Documentação conferida contra o worker publicado: WhatsApp é Green API (não Evolution), assistente "Ana Paula" no próprio Worker, `scheduled()` já ativo e módulos de locação/financeiro no D1

@@ -1,4 +1,18 @@
 <!-- ==========================================================================
+     ⚠️ CONFERIR ANTES DE COLAR (14/09/2026)
+
+     O Worker publicado já tem `POST /api/chat-crm` e `GET /api/chat-crm/historico`,
+     criados depois deste arquivo. Se for usar o chat que já está em produção —
+     o mais provável —, troque no <script> abaixo:
+
+        /api/assistente          →  /api/chat-crm/historico   (carregar)
+        /api/assistente/mensagem →  /api/chat-crm             (enviar)
+
+     e ajuste o corpo do POST: a rota de produção espera { mensagem: "..." },
+     não { texto: "..." }. O resto do painel (avisos, contador, som) funciona
+     igual, porque depende só de /api/avisos.
+     ==========================================================================
+
      Chat da Ana Paula dentro do CRM — cole este bloco antes de </body>
      no HTML do CRM. Sem biblioteca nenhuma.
 
