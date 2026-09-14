@@ -68,8 +68,10 @@ explícita. Se for necessário um exemplo em documentação, use dados fictício
 
 ## Segredos
 
-Chaves de API ficam em variáveis de ambiente, nunca no repositório. O
-`.mcp.json` referencia `${SCRAPEGRAPH_API_KEY}` justamente por isso.
+Chaves de API e strings de conexão ficam em variáveis de ambiente, nunca no
+repositório. O `.mcp.json` referencia `${SCRAPEGRAPH_API_KEY}` e
+`${DATABASE_URI}` justamente por isso — a `DATABASE_URI` carrega usuário e
+senha do banco.
 
 Antes de commitar, confira o que entrou no stage. Se aparecer token, senha,
 chave ou string longa de aparência aleatória, pare e pergunte.
@@ -83,6 +85,33 @@ chave ou string longa de aparência aleatória, pare e pergunte.
   natural. Use antes de enviar qualquer texto gerado por IA a um lead ou
   cliente: respostas da recepcionista "Fernanda" no WhatsApp, textos de
   proposta, mensagens de follow-up e disparo em massa.
+- `.claude/skills/postgres-mcp/` — consulta e análise de bancos PostgreSQL
+  via MCP. Use para rodar SQL, ver esquema ou investigar consulta lenta em
+  um Postgres. Não serve para o banco do CRM, que é D1 (ver abaixo).
+
+## Servidores MCP deste repositório
+
+O `.mcp.json` na raiz declara dois servidores:
+
+- **scrapegraph-mcp** — scraping estruturado (chave em `SCRAPEGRAPH_API_KEY`).
+- **postgres** — Postgres MCP Pro (`postgres-mcp`, Crystal DBA, MIT), rodado
+  com `uvx`. Conexão vem de `DATABASE_URI`; nada de string de conexão em
+  arquivo do repositório.
+
+Regras fixas do servidor `postgres`:
+
+- Ele roda em `--access-mode=restricted` (somente leitura). Só mude para
+  `unrestricted` se o Thiago pedir de forma explícita, e nunca contra banco
+  de produção sem backup.
+- O argumento `--with mcp<2` no `.mcp.json` não é enfeite: o `postgres-mcp`
+  0.3.0 usa a API `FastMCP` do SDK `mcp` 1.x e quebra no start com o SDK 2.x.
+  Não remova sem antes conferir que a versão nova do pacote é compatível.
+- **O banco do CRM em produção é o D1 (SQLite) da Cloudflare, não Postgres.**
+  Este servidor não enxerga o D1. Para consultar o CRM, use o MCP da
+  Cloudflare (`d1_database_query`) ou o painel. Se o pedido for "consulta o
+  banco do CRM", o caminho é o D1 — não tente pelo `postgres`.
+- Consulta em banco com dado real de cliente segue a regra de LGPD da seção
+  acima: sempre com `LIMIT`, sem colar resultado em serviço externo.
 
 ## Convenções de trabalho
 
